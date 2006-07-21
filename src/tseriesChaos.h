@@ -1,4 +1,4 @@
-/*Author: Antonio, Fabio Di Narzo. Last Modified $Date: 2006-04-26 23:09:52 +0200 (mer, 26 apr 2006) $*/
+/*Author: Antonio, Fabio Di Narzo. Last Modified $Date: 2006-01-23 20:07:32 +0100 (lun, 23 gen 2006) $*/
 #ifndef tseriesChaos_h
 #define tseriesChaos_h
 

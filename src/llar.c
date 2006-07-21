@@ -1,5 +1,5 @@
 /*
-## Copyright (C) 2006  Antonio, Fabio Di Narzo. Last Modified: $Date: 2006-04-26 23:09:52 +0200 (mer, 26 apr 2006) $
+## Copyright (C) 2006  Antonio, Fabio Di Narzo. Last Modified: $Date: 2006-03-12 17:50:40 +0100 (dom, 12 mar 2006) $
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by

@@ -1,3 +1,4 @@
+importFrom(utils, toLatex)
 importFrom(tseriesChaos, embedd)
 importFrom(tseriesChaos, mutual)
 importFrom(tseriesChaos, d2)

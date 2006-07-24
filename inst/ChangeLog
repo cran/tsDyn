@@ -1,3 +1,7 @@
+-version 0.5-3 released
+-fixed some warnings issued in R-devel check script
+-added URL field to DESCRIPTION
+
 -version 0.5-2 released
 -fixed gui design error in autopairs and autotriples
 

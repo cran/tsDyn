@@ -21,8 +21,8 @@ GUI=interactive())
   density and regression functions estimations using functions in the
   package 'sm'.
   In particular, for kernel density estimation
-  \code{\link{sm.density}} is used, with smoothing parameter \code{h}
-  defaulting to \code{\link{hnorm}}. For kernel regression, \code{\link{sm.regression}} is used.
+  \code{\link[sm]{sm.density}} is used, with smoothing parameter \code{h}
+  defaulting to \code{\link[sm]{hnorm}}. For kernel regression, \code{\link[sm]{sm.regression}} is used.
 
   If \code{GUI==TRUE}, a simple graphical user interface is displayed
   to control graphical parameters.
@@ -31,8 +31,9 @@ GUI=interactive())
 None. Plots are produced on the default graphical device.
 }
 \seealso{
-For finer control on density estimation, consider using directly \code{\link{sm.density}} and, especially, 
-\code{\link{sm.ts.pdf}} from package \code{\link{sm}}.
+For finer control on density estimation, consider using directly 
+\code{\link[sm]{sm.density}} and, especially, 
+\code{\link[sm]{sm.ts.pdf}} from package \code{\link[sm]{sm}}.
 }
 \examples{
 x <- log10(lynx)

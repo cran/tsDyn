@@ -62,7 +62,7 @@ plot.llar <- function(x, ...)
 		ylim=c(0,max(1,max(x$RMSE))),
 		main=paste("local linear fit of",attr(x,"series")))
 
-as.data.frame.llar <- function(x, row.names, optional)
+as.data.frame.llar <- function(x, row.names, optional, ...)
 	data.frame(unclass(x))
 
 #One steps ahead forecast from local linear model applied to the observed time series.

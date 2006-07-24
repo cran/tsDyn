@@ -14,14 +14,13 @@ autotriples.rgl(x, lags=1:2, type=c("lines", "points"))
 }
 \details{
 This function displays interactive trivariate time series plots 
-\code{x[t-lags[1]], x[t-lags[2]]} against \code{x[t]} using the interactive \code{\link{rgl}} device.
+\code{x[t-lags[1]], x[t-lags[2]]} against \code{x[t]} using the interactive \code{\link[rgl]{rgl}} device.
 }
 \value{
 None. A plot is produced on the current \code{rgl} device.
 }
 \seealso{
-\code{\link{autotriples}} for 3d visualization via \code{scatterplot3d} package and for kernel post-processing of the
-cloud for nonparametric autoregression functions estimates.
+\code{\link{autotriples}} for 3d visualization via \code{scatterplot3d} package and for kernel post-processing of the cloud for nonparametric autoregression functions estimates.
 }
 \examples{
 if(interactive())

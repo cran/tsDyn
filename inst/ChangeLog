@@ -1,3 +1,6 @@
+-version 0.5-7
+-fixed mantainer mail field in DESCRIPTION
+
 -version 0.5-6
 -fixed bug in setar model when mL and/or mH=0
 

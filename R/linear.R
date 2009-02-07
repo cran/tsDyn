@@ -1,4 +1,4 @@
-## Copyright (C) 2005/2006  Antonio, Fabio Di Narzo
+##Copyright (C) 2005/2006  Antonio, Fabio Di Narzo
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -17,15 +17,53 @@
 
 #linear model fitter (via OLS)
 #str: call to nlar.struct
-linear <- function(x, m, d=1, steps=d, series) {
+linear <- function(x, m, d=1, steps=d, series,include = c("const", "trend","none", "both"), type=c("level", "diff", "ADF")) {
 	str <- nlar.struct(x=x, m=m, d=d, steps=steps, series=series)
-	xx <- getXX(str)
-	yy <- getYY(str)
-	xx <- cbind(1,xx)
-	colnames(xx) <- c("(intercept)", paste("phi",1:(ncol(xx)-1), sep="."))
+	type<-match.arg(type)
+	
+	###Build regressor matrix
+	if(type=="level"){
+	  xx <- getXX(str)
+	  yy <- getYY(str)
+	}
+	else{ 
+	  if(type=="diff"){
+	    xx <- getdXX(str)
+	    yy <- getdYY(str)
+	  }
+	  else if(type=="ADF"){
+	    xx <- cbind(getdX1(str),getdXX(str))
+	    yy <- getdYY(str)
+	  }
+	  str$xx<-xx
+	  str$yy<-yy
+	}
+	
+	constMatrix<-buildConstants(include=include, n=nrow(xx)) #stored in miscSETAR.R
+	incNames<-constMatrix$incNames #vector of names
+	const<-constMatrix$const #matrix of none, const, trend, both
+	ninc<-constMatrix$ninc #number of terms (0,1, or 2)
+	xx <- cbind(const,xx)
+	###name the regressor matrix
+	phi<-ifelse(type=="level", "phi", "Dphi")
+	dX1<- if(type=="ADF") "phi.1" else NULL
+	nlags<-if(type=="ADF") ncol(xx)-ninc-1 else ncol(xx)-ninc
+	colnames(xx) <- c(incNames, dX1, paste(phi,1:nlags, sep="."))
+	
+	#evaluate the model
 	res <- lm.fit(xx, yy)
-	return(extend(nlar(str, coefficients=res$coefficients, fitted.values=res$fitted.values,
-		residuals=res$residuals, k=res$df, model.specific=res), 
+	res$incNames<-incNames
+	#check if unit root lie outside unit circle
+	if(type=="level")
+	  is<-isRoot(coef(res), regime=".", lags=seq_len(m))
+	
+	return(extend(nlar(str,
+	  coefficients=res$coefficients,
+	  fitted.values=res$fitted.values,
+	  residuals=res$residuals,
+	  k=res$rank,
+	  model=data.frame(yy,xx),
+	  model.specific=res),
 		"linear"))
 }
 
@@ -64,6 +102,8 @@ print.summary.linear <- function(x, digits=max(3, getOption("digits") - 2),
 }
 
 oneStep.linear <- function(object, newdata, ...) {
+	if((names(coef(object))[1]!="const" |names(coef(object))[2]=="trend"))
+	  stop("Currently, only arg const is implemented for predict method")
 	cbind(1,newdata) %*% object$coefficients
 }
 

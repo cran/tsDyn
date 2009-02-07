@@ -1,4 +1,4 @@
-## Copyright (C) 2005, 2006, 2007/2006  Antonio, Fabio Di Narzo
+## Copyright (C) 2005, 2006, 2007/2006, 2008  Antonio, Fabio Di Narzo
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -58,15 +58,37 @@ getXX <- function(obj, ...)
 getYY <- function(obj, ...)
 	getXXYY(obj, ...)[ , obj$m+1]
 
+getdXXYY <- function(obj, ...) UseMethod("getdXXYY")
+
+getdXXYY.nlar.struct <- function(obj,same.dim=FALSE, ...) {
+	x <- obj$x
+	m<-if(same.dim) obj$m-1 else obj$m
+	d <- obj$d
+	steps <- obj$steps
+	embedd(x, lags=c((0:(m-1))*(-d), steps) )
+}
+
+getdXX <- function(obj, ...)
+	diff(getdXXYY(obj,...))[ , 1:obj$m , drop=FALSE]
+
+getdYY <- function(obj, ...)
+	diff(getdXXYY(obj, ...))[ , obj$m+1]
+
+getdX1 <- function(obj, ...)
+	getdXXYY(obj,...)[ -1, 1, drop=FALSE]
+
 getNUsed <- function(obj, ...)
 	UseMethod("getNUsed")
 
 getNUsed.nlar.struct <- function(obj, ...)
 	length(obj$x)
 
+getNUsed.nlar <- function(obj, ...)
+	length(obj$str$x)
+	
 #non-linear autoregressive model fitting
 #str: result of a call to nlar.struct
-nlar <- function(str, coefficients, fitted.values, residuals, k,
+nlar <- function(str, coefficients, fitted.values, residuals, k, model,
                  model.specific=NULL, ...) {
   return(extend(list(), "nlar",
                 str=str,
@@ -74,6 +96,7 @@ nlar <- function(str, coefficients, fitted.values, residuals, k,
                 fitted.values= fitted.values,
                 residuals = residuals,
                 k=k,
+		model=model,
                 model.specific=model.specific,
                 ...
                 ))
@@ -107,6 +130,8 @@ residuals.nlar <- function(object, ...) {
   ans
 }
 
+deviance.nlar<-function(object,...) crossprod(object$residuals)
+
 #Mean Square Error for the specified object
 mse <- function (object, ...)  
   UseMethod("mse")
@@ -118,11 +143,26 @@ mse.nlar <- function(object, ...)
   sum(object$residuals^2)/object$str$n.used
 
 #AIC for the fitted nlar model
-AIC.nlar <- function(object, ...){
+AIC.nlar <- function(object,k=2, ...){
   n <- object$str$n.used
-  k <- object$k
-  n * log( mse(object) ) + 2 * k
+  npar <- object$k
+  n * log( mse(object) ) + k * npar
 }
+
+
+BIC <- function(object, ...,k) UseMethod("BIC")
+
+BIC.default<-function(object, ...,k)
+	NULL
+
+BIC.lm<-function(object, ...,k)
+	AIC(object,...,k=log(length(object$residuals)))
+
+#BIC for the fitted nlar model
+BIC.nlar <- function(object, ...,k)
+	AIC.nlar(object, k=log(getNUsed(object)))
+
+
 
 #Mean Absolute Percent Error
 MAPE <- function(object, ...)
@@ -245,12 +285,6 @@ toLatex.nlar <- function(object, ...) {
 }
 
 
-addRegime <- function(object, ...)
-  UseMethod("addRegime")
-
-linearityTest <- function(object, ...)
-	UseMethod("linearityTest")
-
 # LM linearity testing against 2 regime STAR
 #
 #   Performs an 3rd order Taylor expansion LM test
@@ -258,10 +292,9 @@ linearityTest <- function(object, ...)
 #   str: an nlar.struct object
 #   rob
 #   sig
-linearityTest.nlar.struct <- function(object, thVar, externThVar=FALSE,
+linearityTest.star <- function(str, thVar, externThVar=FALSE,
                                       rob=FALSE, sig=0.05, trace=TRUE, ...)
 {
-  str <- object
   n.used <- NROW(str$xx);  # The number of lagged samples
 
   # Build the regressand vector

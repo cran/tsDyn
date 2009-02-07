@@ -99,7 +99,7 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     # Maximum and minimum values for gamma
     maxGamma <- 40;
     minGamma <- 10;
-    rateGamma <- 5;
+    rateGamma <- 1;
 
     # Maximum and minimum values for c
     minTh <- quantile(as.ts(z), .1) # percentil 10 de z
@@ -166,7 +166,7 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     # First fix the linear parameters
     xx <- cbind(xxL, xxH * G(z, gamma, th))
     if(any(is.na(as.vector(xx)))) {
-      message('missing value during computations')
+      message('lstar: missing value during computations')
       return (Inf)
     }
     tmp <- lm.fit(xx, yy)$coefficients
@@ -181,8 +181,8 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
  
   #Numerical minimization##########
   p <- c(gamma, th)   #pack parameters in one vector
-  res <- optim(p, SS, gradEhat, hessian = TRUE, control = control,
-               phi1 = phi1, phi2 = phi2)
+  res <- optim(p, SS, gradEhat, hessian = TRUE, method="BFGS",
+               control = control, phi1 = phi1, phi2 = phi2)
 
   if(trace)
     if(res$convergence!=0)
@@ -194,6 +194,9 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
   gamma <- res$par[1]
   th <- res$par[2]
 
+  if (trace) cat("Optimized values fixed for regime 2 ",
+                 ": gamma = ", gamma, ", th = ", th,"\n");
+  
   # Fix the linear parameters one more time
   new_phi<- lm.fit(cbind(xxL, xxH * G(z, gamma, th)), yy)$coefficients
   phi1 <- new_phi[1:(mL+1)]
@@ -228,6 +231,7 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
                      fit =res$fitted,
                      res =res$residuals,
                      k   =res$k,
+		     model = data.frame(yy,xxL, xxH * G(z, gamma, th)),
                      model.specific=res),
                 "lstar"))
 }
@@ -388,19 +392,19 @@ plot.lstar <- function(x, ask=interactive(), legend=FALSE,
 }
 
 oneStep.lstar <- function(object, newdata, itime, thVar, ...){
-  mL <- object$model$mL
-  mH <- object$model$mH
+  mL <- object$model.specific$mL
+  mH <- object$model.specific$mH
   phi1 <- object$coefficients[1:(mL+1)]
   phi2 <- object$coefficients[mL+1+ 1:(mH+1)]
   gamma <- object$coefficients["gamma"]
   c <- object$coefficients["th"]
-  ext <- object$model$externThVar
+  ext <- object$model.specific$externThVar
 
   if(ext) {
     z <- thVar[itime]
   }
   else {
-    z <- newdata %*% object$model$mTh
+    z <- newdata %*% object$model.specific$mTh
     dim(z) <- NULL
   }
   z <- plogis(z, c, 1/gamma)

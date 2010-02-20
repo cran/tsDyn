@@ -173,8 +173,10 @@ res<-Y-fitted
 
 ###Y and regressors matrix
 naX<-rbind(matrix(NA, ncol=ncol(Z), nrow=T-t), Z)
-dimnames(naX)<-list(rownames(data), Bnames)
+rownames(naX)<-rownames(data)
+colnames(naX)<-Bnames
 YnaX<-cbind(data, naX)
+
 
 ###Return outputs
 model.specific<-list()
@@ -185,7 +187,7 @@ if(model=="VECM"){
   }
 
 
-z<-list(residuals=res,  coefficients=B,  k=k, t=t,T=T, npar=npar, nparB=ncol(B), type="linear", fitted.values=fitted, model.x=Z, include=include,lag=lag, model=YnaX, model.specific=model.specific)
+z<-list(residuals=res,  coefficients=B,  k=k, t=t,T=T, npar=npar, nparB=ncol(B), type="linear", fitted.values=fitted, model.x=Z, include=include,lag=lag, model=YnaX, df.residual=t-npar/k, model.specific=model.specific)
 if(model=="VAR")
   class(z)<-c("VAR","nlVar")
 else{
@@ -235,11 +237,10 @@ summary.VAR<-function(object, digits=4,...){
 	r<-4
 	t<-x$t
 	k<-x$k
-
-	Sigma<-matrix(1/t*crossprod(x$residuals),ncol=k)
-	VarCovB<-solve(crossprod(x$model.x))%x%Sigma
+	Sigma<-matrix(1/(object$df.residual)*crossprod(x$residuals),ncol=k)
+	cov.unscaled<-solve(crossprod(x$model.x))
+	VarCovB<-cov.unscaled%x%Sigma
 	StDevB<-matrix(diag(VarCovB)^0.5, nrow=k)
-
 	Tvalue<-x$coefficients/StDevB
 
 	Pval<-pt(abs(Tvalue), df=(nrow(x$model.x)-ncol(x$model.x)), lower.tail=FALSE)+pt(-abs(Tvalue), df=(nrow(x$model.x)-ncol(x$model.x)), lower.tail=TRUE)
@@ -250,7 +251,8 @@ summary.VAR<-function(object, digits=4,...){
 	dimnames(ab)<-dimnames(x$coefficients)		
 
 	x$bigcoefficients<-ab
-	x$Sigma<-Sigma
+	x$cov.unscaled<-cov.unscaled
+	x$sigma<-Sigma
 	x$StDev<-StDevB
 	x$Pvalues<-Pval
 	x$stars<-stars
@@ -276,6 +278,15 @@ print.summary.VAR<-function(x,...){
 
 }
 
+vcov.VAR<-function(object, ...){
+    sum<-summary.VAR(object)
+    so<-sum$cov.unscaled%x%sum$sigma
+    co.names<-gsub(" ", "", colnames(coef(object)))
+    eq.names<-gsub("Equation ", "",rownames(coef(object)))
+    together.names<-paste(rep(eq.names,each= length(co.names)), co.names, sep=":")
+    dimnames(so)<-list(together.names, together.names)
+    so
+}
 
 toLatex.VAR<-function(object,..., digits=4, parenthese=c("StDev","Pvalue")){
 	x<-object
@@ -352,7 +363,7 @@ aVAR<-lineVar(dat, lag=1, include="const", model="VECM", estim="ML", beta=0.98)
 #lag2, 2 thresh, trim00.05: 561.46
 aVAR
 summary(aVAR)
-sqrt(diag(summary(aVAR, cov=0)$Sigma))
+sqrt(diag(summary(aVAR, cov=0)$sigma))
 vcov.VAR(aVAR)
 vcovHC.VAR(aVAR)
 logLik(aVAR)

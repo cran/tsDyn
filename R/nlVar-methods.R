@@ -13,16 +13,49 @@ logLik.nlVar<-function(object,...){
 	log(det(Sigmabest))
 }
 
+logLik.VECM<-function(object,r=1,...){
+  t<-object$t
+  k<-object$k
+  
+  if(object$model.specific$estim=="ML"){
+    S00<-object$model.specific$S00
+    lambda<-object$model.specific$lambda
+    seq<-if(r==0) 0 else if(r%in%1:k) 1:r else warning("r cann't be greater than k (numer of variables")
+    
+    res <- -(t*k/2)*log(2*pi) - t*k/2 -(t/2)*log(det(S00))-(t/2)*sum(log(1-lambda[seq]))
+  } else {
+    Sigmabest<-matrix(1/t*crossprod(object$residuals),ncol=k)
+    res <- log(det(Sigmabest))
+  }
+  return(res)
+}
+
 AIC.nlVar<-function(object,..., k=2){
 	t<-object$t
 	t*logLik.nlVar(object)+k*(object$npar+object$model.specific$nthresh)
 }
 
-
+AIC.VECM<-function(object,..., k=2,r){
+	kVar<-object$k
+	Rank<-if(missing(r)) object$model.specific$r else r
+	t<-object$t
+#formula from Gonzalo pitarakis is p^2(k-1) +2pr -r^2+constan, here npar already contains pr
+	nParFree<- object$npar+kVar*Rank- Rank^2
+	t*logLik.VECM(object,r=Rank)+k*nParFree 
+}
 
 BIC.nlVar<-function(object,..., k=log(object$t)){
 	t<-object$t
 	t*logLik.nlVar(object)+k*(object$nparB+object$model.specific$nthresh)
+}
+
+BIC.VECM<-function(object,..., k=log(object$t),r){
+	kVar<-object$k
+	Rank<-if(missing(r)) object$model.specific$r else r
+	t<-object$t
+	#formula from Gonzalo pitarakis is p^2(k-1) +2pr -r^2+constan, here npar already contains pr
+	nParFree<- object$npar+kVar*Rank- Rank^2
+	t*logLik.VECM(object,r=Rank)+k*nParFree 
 }
 
 deviance.nlVar<-function(object,...){
@@ -41,10 +74,11 @@ coef.nlVar<-function(object,...){
 	return(object$coefficients)
 }
 
+### Method coefMat
 coefMat <- function (object, ...)  
   UseMethod("coefMat")
 
-coefmat.default<-function(object, ...)
+coefMat.default<-function(object, ...)
   coefficients(object)
   
 coefMat.nlVar<-function(object,...){
@@ -54,53 +88,23 @@ coefMat.nlVar<-function(object,...){
     return(object$coeffmat)
 }
 
-summary.nlVar2<-function(x, ...){
-	r<-4
-	t<-x$t
-	k<-x$k
-
-	Sigma<-matrix(1/t*crossprod(x$residuals),ncol=k)
-	VarCovB<-solve(crossprod(x$model.x))%x%Sigma
-	StDevB<-matrix(diag(VarCovB)^0.5, nrow=k)
-
-	Tvalue<-x$coefficients/StDevB
-
-	Pval<-pt(abs(Tvalue), df=(nrow(x$model.x)-ncol(x$model.x)), lower.tail=FALSE)+pt(-abs(Tvalue), df=(nrow(x$model.x)-ncol(x$model.x)), lower.tail=TRUE)
-	Pval<-round(Pval,4)
-	symp <- symnum(Pval, corr=FALSE,cutpoints = c(0,  .001,.01,.05, .1, 1), symbols = c("***","**","*","."," "))
-	stars<-matrix(symp, nrow=nrow(Pval))
-	ab<-matrix(paste(round(x$coefficients,r),"(", round(StDevB,r),")",stars,sep=""), nrow=nrow(Pval))
-	dimnames(ab)<-dimnames(x$coefficients)		
-
-print(ab)
-cat("\n",attributes(symp)$legend)
-# return(Sigma=Sigma, StDevB=StDevB, Pval=Pval)
+###Method toMlm
+toMlm<- function(x, ...) {
+  UseMethod("toMlm")
 }
 
-
-summary.nlVar2<-function(x, ...){
-	r<-4
-	t<-x$t
-	k<-x$k
-
-	Sigma<-matrix(1/t*crossprod(x$residuals),ncol=k)
-	VarCovB<-solve(crossprod(x$model.x))%x%Sigma
-	StDevB<-matrix(diag(VarCovB)^0.5, nrow=k)
-
-	Tvalue<-x$coefficients/StDevB
-
-	Pval<-pt(abs(Tvalue), df=(nrow(x$model.x)-ncol(x$model.x)), lower.tail=FALSE)+pt(-abs(Tvalue), df=(nrow(x$model.x)-ncol(x$model.x)), lower.tail=TRUE)
-	Pval<-round(Pval,4)
-	symp <- symnum(Pval, corr=FALSE,cutpoints = c(0,  .001,.01,.05, .1, 1), symbols = c("***","**","*","."," "))
-	stars<-matrix(symp, nrow=nrow(Pval))
-	ab<-matrix(paste(round(x$coefficients,r),"(", round(StDevB,r),")",stars,sep=""), nrow=nrow(Pval))
-	dimnames(ab)<-dimnames(x$coefficients)		
-
-print(ab)
-cat("\n",attributes(symp)$legend)
-# return(Sigma=Sigma, StDevB=StDevB, Pval=Pval)
+toMlm.default <- function(x){
+  lm(x$model)
 }
 
+toMlm.nlVar<-function(x){
+  mod<-as.data.frame(x$model[-c(1:(x$T-x$t)),] )
+  ix <- 1:x$k
+  Yt<-as.matrix(mod[,ix])
+  Ytminusi<-mod[,-ix]
+  mlm<-lm(Yt ~.-1, Ytminusi)
+  return(mlm)
+  }
 
 ###Tolatex preliminary###
 #########################

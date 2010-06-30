@@ -1,9 +1,21 @@
 TVECM<-function(data,lag=1,nthresh=1, trim=0.05, ngridBeta=50, ngridTh=50, plot=TRUE,  th1=list(exact=NULL, int=c("from","to"), around="val"), th2=list(exact=NULL, int=c("from","to"), around="val"), beta=list(exact=NULL, int=c("from","to"), around=c("val","by")), restr=c("none", "equal", "signOp"), common=c("All", "only_ECT"), include = c( "const", "trend","none", "both"),dummyToBothRegimes=TRUE,beta0=0,methodMapply=FALSE, trace=TRUE ) {
+
+##check args
+include<-match.arg(include)
+model<-match.arg(common)
+restr<-match.arg(restr)
+if(restr=="equal") stop("Sorry, restriction 'equal' not yet fully implemented")
+
 bn<-ngridBeta
 ngridG<-ngridTh
 gamma1<-th1
 gamma2<-th2
 
+if(!missing(gamma1) &&!is.list(gamma1)) gamma1<-list(exact=gamma1)
+if(!missing(gamma2) &&!is.list(gamma2)) gamma2<-list(exact=gamma2)
+
+
+##create variables
 y<-as.matrix(data)
 T<-nrow(y) #T: number of observations
 p<-lag #p: Number of lags
@@ -14,10 +26,7 @@ if(k>2 & is.null(beta$exact))
 if(is.null(colnames(data))==TRUE)
   colnames(data)<-paste("Var", c(1:k), sep="")
 ndig<-getndp(y)
-restr<-match.arg(restr)
-include<-match.arg(include)
-model<-match.arg(common)
-model<-switch(model, "All"="All", "only_ECT"="only_ECT")
+
 
 ysmall<-y[(p+1):T,]
 DeltaY<-diff(y)[(p+1):(T-1),]
@@ -106,6 +115,7 @@ ng<-length(allgammas)
 #Default method: grid from lower to higher point
 gammas<-allgammas[round(seq(from=trim, to=1-trim, length.out=ngridG)*ng)]
 #gamma pre-specified
+
 if(is.null(gamma1$exact)==FALSE){
   if(any(allgammas==gamma1$exact)==FALSE)
     warning("The value you gave for gamma does not correspond to an existing value. This causes problems currently")
@@ -200,13 +210,13 @@ oneSearch<-function(betas, gammas){
 #m<-min(store, na.rm=TRUE)
     na<-sum(ifelse(is.na(store),1,0))
     if(na>0) {
-      if(trace) {cat("\n",na,"(", percent(na/(nrow(store)*ncol(store)),3,by100=TRUE), ") points of the grid lead to regimes with percentage of observations < trim and were not computed\n")}
+      if(trace) {cat(na," (", percent(na/(nrow(store)*ncol(store)),3,by100=TRUE), ") points of the grid lead to regimes with percentage of observations < trim and were not computed\n", sep="")}
     }
     
     pos<-which(store==min(store, na.rm=TRUE), arr.ind=TRUE) #Best gamma
     if(nrow(pos)>1) {
       if(trace){
-        cat("\n\tThere were ",nrow(pos), " thresholds/cointegrating combinations (",paste(gammas[pos[,1]],"/",betas[pos[,2]],", "), ") \nwhich minimize the SSR in the first search, the first one ", round(gammas[pos[1,1]],ndig), " ",round(betas[pos[1,2]],ndig)," was taken") }
+        cat("There were ",nrow(pos), " thresholds/cointegrating combinations (",paste(gammas[pos[,1]],"/",betas[pos[,2]],", "), ") \nwhich minimize the SSR in the first search, the first one ", round(gammas[pos[1,1]],ndig), " ",round(betas[pos[1,2]],ndig)," was taken\n") }
       pos<-pos[1,]
     }
     
@@ -222,7 +232,7 @@ oneSearch<-function(betas, gammas){
     storemap<-mapply(oneThreshTemp, betai=grid[,1], gam=grid[,2])
     bests<-which(storemap==min(storemap, na.rm=TRUE))
     if(length(bests)>1) {
-      if(trace){ cat("\n\tThere were ",length(bests), " thresholds values which minimize the SSR in the first search, the first one was taken")}
+      if(trace){ cat("There were ",length(bests), " thresholds values which minimize the SSR in the first search, the first one was taken\n")}
       bests<-bests[1]}
     beta_grid<-grid[bests,1]
     bestGamma1<-grid[bests,2]
@@ -332,8 +342,8 @@ if(nthresh==2){
   bestBeta <- bestone$beta
   func<-switch(model, "All"=two_Thresh, "only_ECT"=two_partial_Thresh)
   if(trace){
-    cat("\nBest threshold from first search", bestThresh)
-    cat("\nBest cointegrating value",bestBeta )}
+    cat("Best threshold from first search", bestThresh, "\n")
+    cat("Best cointegrating value",bestBeta, "\n" )}
   if(!is.null(gamma2$exact))
     secondBestThresh<-gamma2$exact
   
@@ -373,7 +383,7 @@ if(nthresh==2){
     
     positionSecond <- which(store2==min(store2, na.rm=TRUE))
     if(length(positionSecond)>1) {
-      if(trace) cat("\n\tThere were ",length(positionSecond), " thresholds values which minimize the SSR in the conditional step, the first one was taken")
+      if(trace) cat("There were ",length(positionSecond), " thresholds values which minimize the SSR in the conditional step, the first one was taken\n")
     }
     positionSecond<-positionSecond[1]
     if(positionSecond<=length(storeMinus)){
@@ -382,7 +392,7 @@ if(nthresh==2){
       secondBestThresh<-gammaPlus[positionSecond-length(storeMinus)]}
     
     if(trace)
-      cat("\nSecond best (conditionnal on the first one)", c(bestThresh,secondBestThresh), "\t SSR", min(store2, na.rm=TRUE))
+      cat("Second best (conditionnal on the first one)", c(bestThresh,secondBestThresh), "\t SSR", min(store2, na.rm=TRUE), "\n")
   }#end if ...many conditions
   
   
@@ -430,7 +440,7 @@ if(nthresh==2){
   positionIter <- which(storeIter==min(storeIter, na.rm=TRUE), arr.ind=TRUE)
   if(nrow(positionIter)>1) {
     if(trace)
-      { cat("\n\tThere were ",length(positionIter), " thresholds values which minimize the SSR in the iterative step, the first one was taken")
+      { cat("There were ",length(positionIter), " thresholds values which minimize the SSR in the iterative step, the first one was taken\n")
         positionIter<-positionIter[1,]}
   }
   rIter <- positionIter[1]
@@ -442,7 +452,7 @@ if(nthresh==2){
   bestThresh <- c(bestThresh1Iter, bestThresh2Iter)
   
   if(trace)
-    cat("\nSecond step best thresholds", bestThresh, "\t\t\t SSR", min(storeIter, na.rm=TRUE))
+    cat("Second step best thresholds", bestThresh, "\t\t\t SSR", min(storeIter, na.rm=TRUE), "\n")
 }#end if nthresh=2
 
 
@@ -487,55 +497,31 @@ if(nthresh==2){
 }
 
 
-###Parameters, SSR AIC, BIC...
+###Estimate parameters, fitted values, residuals
 Bbest<-t(Y)%*%Zbest%*%solve(t(Zbest)%*%Zbest)
-# npar<-ncol(Zbest)
 allpar<-ncol(Bbest)*nrow(Bbest)
-
-# nparTot<-npar+1+nthresh #addition of threshold and cointegrating vector
-
 fitted<-Zbest%*% t(Bbest)
 resbest <- Y - fitted
-SSRbest <- as.numeric(crossprod(c(resbest)))
-Sigmathresh<- matrix(1/t*crossprod(resbest), ncol=k)
-nlike_thresh<-log(det(Sigmathresh)) # nlike=(t/2)*log(det(sige));
-aic_thresh<-t*nlike_thresh+2*(allpar+1+nthresh)
-bic_thresh<-t*nlike_thresh+log(T-p-1)*(allpar+1+nthresh) #bic #=nlike+log10(t)*4*(1+k); ###BIC
 
-VarCovB<-solve(crossprod(Zbest))%x%Sigmathresh
-StDevB<-matrix(diag(VarCovB)^0.5, nrow=k)
-
-Tvalue<-Bbest/StDevB
-Pval<-pt(abs(Tvalue), df=(t-ncol(Zbest)), lower.tail=FALSE)+pt(-abs(Tvalue), df=(t-ncol(Zbest)), lower.tail=TRUE)
-
-
-###Y and regressors matrix
-naX<-rbind(matrix(NA, ncol=ncol(Zbest), nrow=p+1), Zbest)
-YnaX<-cbind(data, naX)
 
 ###naming the parameter matrix
 rownames(Bbest) <- paste("Equation", colnames(data))
-rownames(Pval) <- paste("Equation", colnames(data))
-
 
 DeltaXnames<-c(paste(rep(colnames(data),p), "t",-rep(1:p, each=k)))
-
-
-if(include=="const")
-  Bcolnames <- c("ECT","Const", DeltaXnames)
-else if(include=="trend")
-  Bcolnames <- c("ECT","Trend", DeltaXnames)
-else if(include=="both")
-  Bcolnames <- c("ECT","Const","Trend", DeltaXnames)
-else if(include=="none")
-  Bcolnames <- c("ECT",DeltaXnames)
+Bcolnames <- c("ECT",switch(include, const="Const", trend="Trend", both=c("Const","Trend"), none=NULL), DeltaXnames)
 
 #partitionning the matrix following the regimes, and naming it
 Blist<-nameB(Bbest,commonInter=ifelse(model=="All",FALSE,TRUE), Bnames=Bcolnames,nthresh=nthresh,npar=npar, model="TVECM", TVECMmodel=model)
-
 BnamesVec<-if(class(Blist)=="list") c(sapply(Blist, colnames)) else colnames(Blist)
-colnames(YnaX)<-c(colnames(data),BnamesVec)
 colnames(Bbest)<-BnamesVec
+
+###Y and regressors matrix (returned in $model)
+naX<-rbind(matrix(NA, ncol=ncol(Zbest), nrow=p+1), Zbest)
+YnaX<-cbind(data, naX)
+
+BlistMod<-nameB(Bbest,commonInter=ifelse(model=="All",FALSE,TRUE), Bnames=Bcolnames,nthresh=nthresh,npar=npar, model="TVECM", TVECMmodel=model,sameName=FALSE )
+BnamesVecMod<-if(class(BlistMod)=="list") c(sapply(BlistMod, colnames)) else colnames(BlistMod)
+colnames(YnaX)<-c(colnames(data),BnamesVecMod)
 
 ###Number of observations in each regime
 if(nthresh==1)
@@ -550,6 +536,7 @@ specific$threshEstim<-ifelse(is.null(gamma1), TRUE, FALSE) #whether the threshol
 specific$nthresh<-nthresh	#number of thresholds
 specific$nreg<-nthresh+1	#num of regimes
 specific$beta<-bestBeta	#beta value
+specific$coint<-matrix(c(1,-bestBeta), nrow=k, dimnames=list(colnames(data),"r1"))	#beta value
 specific$nrowB<-npar		#number of parameters
 specific$nobs<-nobs		#percent of observations in each regime
 specific$model<-model
@@ -559,7 +546,7 @@ specific$Bnames<-Bcolnames
 
 # specific$commonInter<-commonInter
 
-z<-list(coefficients=Blist, residuals=resbest, model=YnaX, VAR=VarCovB, coeffmat=Bbest,nobs_regimes=nobs, k=k, t=t,T=T, nparB=allpar, fitted.values=fitted, lag=lag, include=include,model.specific=specific)
+z<-list(coefficients=Blist, residuals=resbest, model=YnaX, coeffmat=Bbest,nobs_regimes=nobs, k=k, t=t,T=T, nparB=allpar, fitted.values=fitted, lag=lag, include=include,model.specific=specific)
 
 
 class(z)<-c("TVECM","nlVar")
@@ -581,16 +568,16 @@ environment(TVECM)<-environment(star)
 summary(lm(zeroyld[,1]~zeroyld[,2]-1))
 summary(lm(zeroyld[,1]~zeroyld[,2]))
 
-TVECM(dat, nthresh=1,lag=1, ngridBeta=80, ngridTh=300, plot=TRUE,trim=0.05, model="All", beta=list(int=c(0.7,1.2)))
-beta0<-rep(1.12,480)
-TVECM(dat, nthresh=1,lag=1, ngridBeta=20, ngridTh=20, plot=FALSE,trim=0.05, model="only_ECT", beta0=beta0)
+TVECM(dat, nthresh=1,lag=1, ngridBeta=80, ngridTh=300, plot=TRUE,trim=0.05, common="All", beta=list(int=c(0.7,1.2)))
+beta0<-rep(1.12,482)
+TVECM(dat, nthresh=1,lag=1, ngridBeta=20, ngridTh=20, plot=FALSE,trim=0.05, common="only_ECT", beta0=beta0)
 
 
-tvecm<-TVECM(dat, nthresh=1,lag=2, ngridBeta=10, ngridTh=10, plot=FALSE,trim=0.05, model="All")
+tvecm<-TVECM(dat, nthresh=1,lag=2, ngridBeta=10, ngridTh=10, plot=FALSE,trim=0.05, common="All")
 #example in working paper 
-tvecm <- TVECM(zeroyld, nthresh = 2, lag = 1, ngridBeta = 60, ngridTh = 30,plot = TRUE, trim = 0.05, model = "All", beta = list(int = c(0.7, 1.1)))
+tvecm <- TVECM(zeroyld, nthresh = 2, lag = 1, ngridBeta = 60, ngridTh = 30,plot = TRUE, trim = 0.05,common= "All", beta = list(int = c(0.7, 1.1)))
 ###To FIX:
-tvecm2<-TVECM(dat, nthresh=2,lag=1, ngridBeta=20,gamma1=list(exact=-1.414),  beta=list(exact=1.05), ngridTh=20, plot=FALSE,trim=0.05, model="All")
+tvecm2<-TVECM(dat, nthresh=2,lag=1, ngridBeta=20,th1=list(exact=-1.414),  beta=list(exact=1.05), ngridTh=20, plot=FALSE,trim=0.05, common="All")
 class(tvecm)
 tvecm
 print(tvecm)
@@ -620,7 +607,7 @@ summary.TVECM<-function(object,digits=4,...){
   x<-object
   k<-x$k
   t<-x$t
-  Z<-t(as.matrix(tail(x$model[,-c(1:k)],t)))
+  Z<-t(as.matrix(tail.matrix(x$model[,-c(1:k)],t)))
   xspe<-x$model.specific
   model<-attr(object, "model")
 ###Stdev, VarCov

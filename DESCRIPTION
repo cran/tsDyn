@@ -1,14 +1,13 @@
 Package: tsDyn
 Type: Package
 Title: Nonlinear time series models with regime switching
-Version: 0.7-30
-Date: 30/06/2010
-Depends: mgcv, Matrix, snow,mnormt,foreach
+Version: 0.7-40
+Date: 11/08/2010
+Depends: mgcv, Matrix, snow,mnormt,foreach, MASS
 Imports: nnet, tseriesChaos, tseries, utils
 Suggests: tcltk, sm, scatterplot3d, rgl
 Author: Antonio Fabio Di Narzo, Jose Luis Aznarte, Matthieu Stigler
-Maintainer: Matthieu Stigler
-        <Matthieu.StigleratGmailandtsdyn@googlegroups.com>
+Maintainer: Matthieu Stigler <Matthieu.Stigler@gmail.com>
 Description: Implements nonlinear autoregressive (AR) time series
         models. For univariate series, a non-parametric approach is
         available through additive nonlinear AR. Parametric modeling
@@ -21,6 +20,6 @@ Description: Implements nonlinear autoregressive (AR) time series
         2006).
 License: GPL (>= 2)
 URL: http://tsdyn.googlecode.com
-Packaged: 2010-07-01 21:45:03 UTC; mat
+Packaged: 2010-08-11 14:33:22 UTC; mat
 Repository: CRAN
-Date/Publication: 2010-07-02 07:11:31
+Date/Publication: 2010-08-11 19:32:51

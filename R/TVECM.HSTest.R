@@ -1,11 +1,10 @@
-TVECM.HSTest <- function(data, lag=1, ngridTh=300, trim=0.05, nboot=100, fixed.beta=NULL,  intercept=TRUE, boot.type=c("FixedReg", "ResBoot"), hpc=c("none", "foreach")) {
+TVECM.HStest <- function(data, lag=1, ngridTh=300, trim=0.05, nboot=100, fixed.beta=NULL,  intercept=TRUE, boot.type=c("FixedReg", "ResBoot"), hpc=c("none", "foreach")) {
 
 
 ## Check args:
 boot.type<-match.arg(boot.type)
 hpc<-match.arg(hpc)
 dir=FALSE #internal value, was used to try different implementation of lmtest
-if(inherits(data, "ts")) warning("There are currently problems when the data is of class ts. Try converting it as data.frame")
 
 ### Organize Data
 data<-as.matrix(data)
@@ -96,7 +95,10 @@ lmtest02<-function(y,x,w0,gammas,dir=dir){
       v<-crossprod(ze)
       z11y<-crossprod(res_unrestr,y)
       s<-matrix(c(z11y), ncol=1)				#vectorization of the parameter matrix z11y
-      store[j]<-t(s)%*%solve(t(v)%*%v)%*%t(v)%*%s 	
+      VV<-crossprod(v)
+      VVinv<-try(solve(VV), silent=TRUE)
+      if(inherits(VVinv, "try-error")) VVinv<-ginv(VV)
+      store[j]<-t(s)%*%VVinv%*%t(v)%*%s 	
     } #end of the if	
   } #end of the whole loop
   return(store)
@@ -128,7 +130,10 @@ lmtest02_boot<-function(y,x,w0,gammas,dir=dir){
     v<-crossprod(ze)
     z11y<-crossprod(res_unrestr,y)
     s<-matrix(c(z11y), ncol=1)				#vectorization of the parameter matrix z11y
-    store[j]<-t(s)%*%solve(t(v)%*%v)%*%t(v)%*%s 	
+    VV<-crossprod(v)
+    VVinv<-try(solve(VV), silent=TRUE)
+    if(inherits(VVinv, "try-error")) VVinv<-ginv(VV)
+    store[j]<-t(s)%*%VVinv%*%t(v)%*%s 	
   } #end of the if	
 } #end of the whole loop
   lm01<-max(store, na.rm=TRUE)
@@ -298,27 +303,27 @@ data(zeroyld)
 data<-zeroyld
 
 ## Test against paper:
-all.equal(round(TVECM.HSTest(data, lag=1, intercept=TRUE, nboot=0)$stat,4),20.5994)
-all.equal(round(TVECM.HSTest(data, lag=2, intercept=TRUE, nboot=0)$stat,4),28.2562 )
-all.equal(round(TVECM.HSTest(data, lag=3, intercept=TRUE, nboot=0)$stat,4), 29.9405 )
+all.equal(round(TVECM.HStest(data, lag=1, intercept=TRUE, nboot=0)$stat,4),20.5994)
+all.equal(round(TVECM.HStest(data, lag=2, intercept=TRUE, nboot=0)$stat,4),28.2562 )
+all.equal(round(TVECM.HStest(data, lag=3, intercept=TRUE, nboot=0)$stat,4), 29.9405 )
 
 
 ## prob:
-all.equal(round(TVECM.HSTest(data, lag=2, intercept=TRUE, nboot=0, fixed.beta=1)$stat,4),29.5295)
-all.equal(round(TVECM.HSTest(data, lag=1, intercept=TRUE, nboot=0, fixed.beta=1)$stat,4),21.5586 )
+all.equal(round(TVECM.HStest(data, lag=2, intercept=TRUE, nboot=0, fixed.beta=1)$stat,4),29.5295)
+all.equal(round(TVECM.HStest(data, lag=1, intercept=TRUE, nboot=0, fixed.beta=1)$stat,4),21.5586 )
   
 ## Test: no boot
-TVECM.HSTest(data, lag=1, intercept=TRUE, ngridTh=50, nboot=0)
-TVECM.HSTest(data, lag=1, intercept=FALSE, ngridTh=50, nboot=0)
-TVECM.HSTest(data, lag=1, intercept=TRUE, boot=0)
-TVECM.HSTest(data, lag=1, intercept=FALSE, boot=0)
+TVECM.HStest(data, lag=1, intercept=TRUE, ngridTh=50, nboot=0)
+TVECM.HStest(data, lag=1, intercept=FALSE, ngridTh=50, nboot=0)
+TVECM.HStest(data, lag=1, intercept=TRUE, boot=0)
+TVECM.HStest(data, lag=1, intercept=FALSE, boot=0)
 
 
 ## Test: boot
-t1<-TVECM.HSTest(data, lag=1, intercept=TRUE, ngridTh=50, nboot=5)
-t2<-TVECM.HSTest(data, lag=1, intercept=FALSE, ngridTh=50, nboot=5)
-t3<-TVECM.HSTest(data, lag=1, intercept=TRUE, ngridTh=50, nboot=5, boot.type="ResBoot")
-t4<-TVECM.HSTest(data, lag=1, intercept=FALSE, ngridTh=50, nboot=5, boot.type="ResBoot")
+t1<-TVECM.HStest(data, lag=1, intercept=TRUE, ngridTh=50, nboot=5)
+t2<-TVECM.HStest(data, lag=1, intercept=FALSE, ngridTh=50, nboot=5)
+t3<-TVECM.HStest(data, lag=1, intercept=TRUE, ngridTh=50, nboot=5, boot.type="ResBoot")
+t4<-TVECM.HStest(data, lag=1, intercept=FALSE, ngridTh=50, nboot=5, boot.type="ResBoot")
 
 ## Test: methodst1
 summary(t1)
@@ -334,6 +339,6 @@ summary(t4)
 
 
 HanSeo_TVECM <- function(dat, lag=1, gn=300, bn=300, trim=0.05, boot=1000, UserSpecified_beta=NULL, cov=1, p_ests=1, intercept=TRUE, UserSpecified_gamma=NULL, boot.type=c("FixedReg", "ResBoot")) {
-stop("This function is now called TVECM.HSTest() and is directly accessible\n")
+stop("This function is now called TVECM.HStest() and is directly accessible\n")
 }
 

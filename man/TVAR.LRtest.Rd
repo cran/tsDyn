@@ -5,7 +5,7 @@
 \description{Multivariate extension of the linearity against threshold test from Hansen (1999) with bootstrap distribution 
 }
 \usage{
-TVAR.LRtest(data, lag=1, trend=TRUE, series, thDelay = 1:m, mTh=1, thVar, nboot=10, plot=FALSE, trim=0.1, test=c("1vs", "2vs3"), check=FALSE, model=c("TAR", "MTAR"))
+TVAR.LRtest(data, lag=1, trend=TRUE, series, thDelay = 1:m, mTh=1, thVar, nboot=10, plot=FALSE, trim=0.1, test=c("1vs", "2vs3"), model=c("TAR", "MTAR"), hpc=c("none", "foreach"), trace=FALSE, check=FALSE)
 }
 
 \value{A list containing:
@@ -26,9 +26,12 @@ TVAR.LRtest(data, lag=1, trend=TRUE, series, thDelay = 1:m, mTh=1, thVar, nboot=
 \item{plot}{Whether a plot showing the results of the grid search should be printed}
 \item{trim}{trimming parameter indicating the minimal percentage of observations in each regime}
 \item{test}{Type of usual and alternative hypothesis. See details}
+\item{model}{Whether the threshold variable is taken in level (TAR) or
+  difference (MTAR)}
+\item{hpc}{Possibility to run the bootstrap on parallel core. See
+  details in \code{\link{TVECM.HStest}}}
+\item{trace}{should additional infos be printed? (logical)}
 \item{check}{Possiblity to check the function by no sampling: the test value should be the sme as in the original data}
-\item{model}{Whether the threshold variable is taken in level (TAR) or difference (MTAR)}
-
 }
 \details{
 This test is just the multivariate extension proposed by Lo and Zivot of the linearity test of Hansen (1999). As in univariate case, estimation of the first threshold parameter is made with CLS, for the second threshold a conditional search with one iteration is made. Instead of a Ftest comparing the SSR for the univariate case, a  Likelihood Ratio (LR) test comparing the covariance matrix of each model is computed. 

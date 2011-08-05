@@ -1,3 +1,19 @@
+Version 0.7-52
+-add tests for lstar
+-correct lstar so that optim function re-evaluate each time linear parameters
+-remove VECM.Rout as useless
+
+Version 0.7-51
+-update NAMESPACE as previous (0.7-50) did not work
+-add VECM.Rout
+-add econometrica .bst and amsplain.bst
+
+Version 0.7-50
+-remove own BIC function and use that of pkg nlme, as recommend by Prof Ripley
+-fix bug in Rd files, and description (missing suggest packages)
+-fix bug in 'autopairs' and 'autotriples': bogus 'showvalue' option was passed to the 'scale' widget
+ (bugreport by Budi Hari Priyanto)
+
 Version 0.7-40
 -Add paralell option for TVAR.LRtest(), setarTest(), TVECM.Seotest()
 -regime() works also for nlVar, also add arguments initVal and timeAttr

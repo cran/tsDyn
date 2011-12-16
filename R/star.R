@@ -186,7 +186,7 @@ testRegime.star <- function(object, G, rob=FALSE, sig=0.05, trace = TRUE, ...)
 
   # Standarize the regressors
   nZ <- NCOL(Z);
-  sdZ <- sd(Z)
+  sdZ <- apply(Z,2,sd)
   dim(sdZ) <- c(1, nZ)
   sdZ <- kronecker(matrix(1, T, 1), sdZ) # repeat sdZ T rows
   Z[,2:nZ] <- Z[,2:nZ] / sdZ[,2:nZ]
@@ -913,9 +913,9 @@ star.predefined <- function(x, m, noRegimes, d=1, steps=d, series,
   }
   
   return(extend(nlar(str, 
-                     coef= c(phi1, phi2),
-                     fit = fitted,
-                     res = residuals,
+                     coefficients= c(phi1, phi2),
+                     fitted.values = fitted,
+                     residuals = residuals,
                      k   = length(as.vector(phi1)) +
                                  length(as.vector(phi2)),
 		    model=NULL,

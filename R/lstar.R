@@ -174,33 +174,36 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     crossprod(lm.fit(xx, yy)$residuals)
   }
  
-  #Numerical minimization##########
+  ## Numerical minimization##########
   p <- c(gamma, th)   #pack parameters in one vector
-  res <- optim(p, SS, gradEhat, hessian = TRUE, method="BFGS", control = control)
+  res <- optim(p, SS, gradEhat, hessian = FALSE, method="BFGS", control = control)
 
   if(trace)
     if(res$convergence!=0)
       cat("Convergence problem. Convergence code: ",res$convergence,"\n")
     else
       cat("Optimization algorithm converged\n")
-  ################################
-  
-  gamma <- res$par[1]
-  th <- res$par[2]
-
+  ## NOptimization: second quick step to get hessian for all parameters########
+  SS_2 <- function(p) {
+    phi1 <- p[1:(mL+1)]			#Extract parms from vector p
+    phi2 <- p[(mL+2):(mL + mH + 2)]	#Extract parms from vector p
+    y.hat <-(xxL %*% phi1) + (xxH %*% phi2) * G(z, p[mL + mH + 3], p[mL + mH + 4])
+    crossprod(yy - y.hat)
+  }
+  phi_2<- lm.fit(cbind(xxL, xxH * G(z, res$par[1], res$par[2])), yy)$coefficients
+  res <- optim(c(phi_2,res$par), SS_2,  hessian = TRUE, method="BFGS", control = control)
+    
+  #Results storing################
+  coefs <- res$par
+  names(coefs) <- c(paste("phi1", 0:mL, sep="."),
+                               paste("phi2", 0:mH, sep="."),
+                               "gamma", "th")
+  gamma <- coefs["gamma"]
+  th  <- coefs["th"]
   if (trace) cat("Optimized values fixed for regime 2 ",
                  ": gamma = ", gamma, ", th = ", th,"\n");
   
-  # Fix the linear parameters one more time
-  new_phi<- lm.fit(cbind(xxL, xxH * G(z, gamma, th)), yy)$coefficients
-  phi1 <- new_phi[1:(mL+1)]
-  phi2 <- new_phi[(mL+2):(mL + mH + 2)]
-
-  #Results storing################
-  res$coefficients <- c(phi1, phi2, res$par[1], res$par[2])
-  names(res$coefficients) <- c(paste("phi1", 0:mL, sep="."),
-                               paste("phi2", 0:mH, sep="."),
-                               "gamma", "th")
+  res$coefficients <- coefs
   res$mL <- mL
   res$mH <- mH
   res$externThVar <- externThVar
@@ -213,7 +216,7 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
   }
 
   res$thVar <- z
-  res$fitted <- F(phi1, phi2, res$par[1], res$par[2])
+  res$fitted <- F(coefs[grep("phi1", names(coefs))], coefs[grep("phi2", names(coefs))], gamma, th)
   res$residuals <- yy - res$fitted
   dim(res$residuals) <- NULL	#this should be a vector, not a matrix
   res$k <- length(res$coefficients)
@@ -221,14 +224,16 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
 ################################
 
   return(extend(nlar(str, 
-                     coef=res$coef,
-                     fit =res$fitted,
-                     res =res$residuals,
+                     coefficients=res$coef,
+                     fitted.values =res$fitted,
+                     residuals =res$residuals,
                      k   =res$k,
 		     model = data.frame(yy,xxL, xxH * G(z, gamma, th)),
                      model.specific=res),
                 "lstar"))
 }
+
+	
 
 #############################################
   #Transition function
@@ -275,9 +280,27 @@ print.lstar <- function(x, ...) {
 
 summary.lstar <- function(object, ...) {
   ans <- list()  
-############################################
-  
-  #Non-linearity test############
+
+  ## SE for ML estimates (from optim), taken from 'arma.R' in package tseries
+  coef<- object$coefficients
+  n <- object$str$n.used
+  rank <- qr(object$model.specific$hessian, 1e-07)$rank
+  if(rank != length(coef)) {
+    se <- rep(NA, length(coef))
+    warning("singular Hessian\n")
+  } else{
+    di <- diag(2*object$model.specific$value/n*solve(object$model.specific$hessian))
+    if(any(di < 0))
+      warning("Hessian negative-semidefinite\n")
+    se <- sqrt(di)
+  }
+
+  tval <- coef/ se
+  coefMat<- cbind(coef, se, tval, 2 * ( 1 - pnorm( abs(tval) ) ) )
+  dimnames(coefMat) <- list(names(coef), c(" Estimate"," Std. Error"," t value","Pr(>|z|)"))
+  ans$coefficients<-coefMat
+
+  ## Non-linearity test############
   xx <- object$str$xx
   sX <- object$model.specific$thVar
   dim(sX) <- NULL
@@ -305,6 +328,8 @@ print.summary.lstar <- function(x, digits=max(3, getOption("digits") - 2),
                        signif.stars = getOption("show.signif.stars"), ...)
 {
   NextMethod(digits=digits, signif.stars=signif.stars, ...)
+  cat("\nCoefficient(s):\n")
+  printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars, ...)
   cat("\nNon-linearity test of full-order LSTAR model against full-order AR model\n")
   cat(" F =", format(x$nlTest.value, digits=digits),"; p-value =", format(x$nlTest.pval, digits=digits),"\n")
   cat("\nThreshold ")

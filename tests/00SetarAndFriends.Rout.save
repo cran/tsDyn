@@ -1,32 +1,32 @@
 
-R version 2.11.1 (2010-05-31)
-Copyright (C) 2010 The R Foundation for Statistical Computing
+R Under development (unstable) (2012-02-01 r58249)
+Copyright (C) 2012 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
 
-R est un logiciel libre livré sans AUCUNE GARANTIE.
-Vous pouvez le redistribuer sous certaines conditions.
-Tapez 'license()' ou 'licence()' pour plus de détails.
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
 
-R est un projet collaboratif avec de nombreux contributeurs.
-Tapez 'contributors()' pour plus d'information et
-'citation()' pour la façon de le citer dans les publications.
+  Natural language support but running in an English locale
 
-Tapez 'demo()' pour des démonstrations, 'help()' pour l'aide
-en ligne ou 'help.start()' pour obtenir l'aide au format HTML.
-Tapez 'q()' pour quitter R.
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
 
-REvolution R enhancements not installed.  For improved
-performance and other extensions: apt-get install revolution-r
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
 
 > library(tsDyn)
 Loading required package: mgcv
-This is mgcv 1.6-2. For overview type 'help("mgcv-package")'.
+This is mgcv 1.7-13. For overview type 'help("mgcv-package")'.
 Loading required package: Matrix
 Loading required package: lattice
 
-Attaching package: 'Matrix'
+Attaching package: ‘Matrix’
 
-The following object(s) are masked from 'package:base':
+The following object(s) are masked from ‘package:base’:
 
     det
 
@@ -36,6 +36,7 @@ Loading required package: foreach
 Loading required package: iterators
 Loading required package: codetools
 Loading required package: MASS
+Loading required package: nlme
 > 
 > data(zeroyld)
 > dat<-zeroyld
@@ -598,13 +599,13 @@ Equation long.run   1.890135 -0.008113763  0.633504924   -0.1262766 -0.01764579
 7 -0.141652551 -0.10341638
 8 -0.084140183  0.01981197
 > tail(residuals(tvar))
-     short.run    long.run
-95  -0.1326403  0.09671450
-96   0.1258271 -0.28920157
-97   0.1782376  0.04344887
-98  -0.1549201 -0.08167471
-99   0.0976071  0.15553665
-100  0.3188607  0.01232640
+      short.run    long.run
+95  -0.13264030  0.09671450
+96   0.12582712 -0.28920157
+97   0.17823756  0.04344887
+98  -0.15492010 -0.08167471
+99   0.09760711  0.15553665
+100  0.31886073  0.01232640
 > head(fitted(tvar))
               [,1]     [,2]     [,3]     [,4]     [,5]     [,6]     [,7]
 short.run 2.312597 2.358166 2.459635 2.605243 2.537653 2.436140 2.398192
@@ -751,7 +752,8 @@ Equation long.run  -0.1263(0.3443)  -0.0176(0.1576)
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 
 Threshold value: 3.091 3.405
-Percentage of Observations in each regime: 71.4% 10.2% 18.4%> 
+Percentage of Observations in each regime: 71.4% 10.2% 18.4% 
+> 
 > options(show.signif.stars=FALSE)
 > summary(tvar)
 Model TVAR with  2  thresholds
@@ -786,7 +788,8 @@ Equation long.run  -0.1263(0.3443) -0.0176(0.1576)
 
 
 Threshold value: 3.091 3.405
-Percentage of Observations in each regime: 71.4% 10.2% 18.4%> 
+Percentage of Observations in each regime: 71.4% 10.2% 18.4% 
+> 
 > print(summary(tvar), digits=3)
 Model TVAR with  2  thresholds
 
@@ -820,7 +823,8 @@ Equation long.run  -0.018(0.158)
 
 
 Threshold value: 3.091 3.405
-Percentage of Observations in each regime: 71.4% 10.2% 18.4%> 
+Percentage of Observations in each regime: 71.4% 10.2% 18.4% 
+> 
 > toLatex(tvar)
 %insert in the preamble and uncomment the line you want for usual /medium /small matrix
 %\usepackage{amsmath} \newenvironment{smatrix}{\begin{pmatrix}}{\end{pmatrix}} %USUAL

@@ -21,8 +21,10 @@
 #	trace: should infos be printed?
 #	control: 'control' options to be passed to optim
 lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
-                  thVar, th, gamma, trace=TRUE, control=list())
+                  thVar, th, gamma, trace=TRUE, include = c("const", "trend","none", "both"), control=list(), starting.control=list())
 {
+
+  include<-match.arg(include)
 
   if(missing(m))
     m <- max(mL, mH, thDelay+1)
@@ -74,9 +76,14 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     z <- xx[,1]
     thDelay = 0
   }
-  
-  xxL <- cbind(1,xx[,1:mL])
-  xxH <- cbind(1,xx[,1:mH])
+  ## Build regressors matrix
+  constMatrix<-buildConstants(include=include, n=nrow(xx)) #stored in miscSETAR.R
+  incNames<-constMatrix$incNames #vector of names
+  const<-constMatrix$const #matrix of none, const, trend, both
+  ninc<-constMatrix$ninc #number of terms (0,1, or 2)
+
+  xxL <- cbind(const,xx[,1:mL])
+  xxH <- cbind(const,xx[,1:mH])
 
   #Fitted values, given parameters
   #phi1: vector of 'low regime' parameters
@@ -96,18 +103,24 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
 
     bestCost <- Inf;
 
-    # Maximum and minimum values for gamma
-    maxGamma <- 40;
-    minGamma <- 10;
-    rateGamma <- 1;
+    # Set list of defaults:
+    start.con<-list(
+		    nTh=200, 
+		    trim=0.1,
+		    nGamma=40,
+		    gammaInt=c(1,100)
+    )
+    # Add if user defined, check if names confirm (code taken from optim)
+    nmsC <- names(start.con)
+    start.con[(namc <- names(starting.control))] <- starting.control
+    if (length(noNms <- namc[!namc %in% nmsC])) 
+        warning("unknown names in starting.control: ", paste(noNms, collapse = ", "))
 
     # Maximum and minimum values for c
-    minTh <- quantile(as.ts(z), .1) # percentil 10 de z
-    maxTh <- quantile(as.ts(z), .9) # percentil 90 de z
-    rateTh <- (maxTh - minTh) / 200;
+    interv.Th <- quantile(as.ts(z), c(start.con$trim, 1-start.con$trim)) # percentil 10 de z
     
-    for(newGamma in seq(minGamma, maxGamma, rateGamma)) {
-      for(newTh in seq(minTh, maxTh, rateTh)) {
+    for(newGamma in seq(start.con$gammaInt[1], start.con$gammaInt[2], length.out=start.con$nGamma)) {
+      for(newTh in seq(interv.Th[1], interv.Th[2], length.out=start.con$nTh)) {
         
         # We fix the linear parameters.
         cost <- crossprod(lm.fit(cbind(xxL, xxH * G(z, newGamma, newTh)), yy)$residuals)
@@ -124,7 +137,9 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
 
     if (trace) {
       cat("Starting values fixed: gamma = ", gamma,", th = ", th, 
-          "; SSE = ", bestCost, "\n");
+          "; SSE = ", bestCost, "\n")
+      if(gamma%in%start.con$gammaInt) cat("Grid search selected lower/upper bound gamma (default [1,100]). 
+					  Might try to widen bound with arg: 'starting.control=list(gammaInt=c(1,200))'\n")
     }
   }
 
@@ -141,8 +156,8 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
       gamma <- p[1]  #Extract parms from vector p
       th    <- p[2] 	     #Extract parms from vector p
       new_phi<- lm.fit(cbind(xxL, xxH * G(z, gamma, th)), yy)$coefficients
-      phi1 <- new_phi[1:(mL+1)]
-      phi2 <- new_phi[(mL+2):(mL + mH + 2)]
+      phi1 <- new_phi[1:(mL+ninc)]
+      phi2 <- new_phi[(mL+ninc+1):(mL + mH + 2*ninc)]
 
       y.hat <- F(phi1, phi2, gamma, th)
       e.hat <- yy - y.hat
@@ -177,31 +192,38 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
   ## Numerical minimization##########
   p <- c(gamma, th)   #pack parameters in one vector
   res <- optim(p, SS, gradEhat, hessian = FALSE, method="BFGS", control = control)
-
-  if(trace)
-    if(res$convergence!=0)
-      cat("Convergence problem. Convergence code: ",res$convergence,"\n")
-    else
+  if(trace){
+    if(res$convergence!=0){
+      if(res$convergence==1) {
+	cat("Convergence problem code 1. You might want to increase maximum number of iterations by setting 'control=list(maxit=1000)'\n")
+      } else {
+	cat("Convergence problem. Convergence code: ",res$convergence,"\n")
+      }
+    } else {
       cat("Optimization algorithm converged\n")
-  ## NOptimization: second quick step to get hessian for all parameters########
-  SS_2 <- function(p) {
-    phi1 <- p[1:(mL+1)]			#Extract parms from vector p
-    phi2 <- p[(mL+2):(mL + mH + 2)]	#Extract parms from vector p
-    y.hat <-(xxL %*% phi1) + (xxH %*% phi2) * G(z, p[mL + mH + 3], p[mL + mH + 4])
-    crossprod(yy - y.hat)
+    }
   }
   phi_2<- lm.fit(cbind(xxL, xxH * G(z, res$par[1], res$par[2])), yy)$coefficients
+  coefnames<-c(if(ninc>0) paste(incNames,"1",sep=""), paste("phi1", 1:mL, sep="."),
+                               if(ninc>0) paste(incNames,"2",sep=""), paste("phi2", 1:mH, sep="."))
+  names(phi_2) <-coefnames
+  names(res$par) <- c("gamma", "th")
+
+  ## Optimization: second quick step to get hessian for all parameters########
+  SS_2 <- function(p) {
+    phi1 <- p[grep("const1|phi1|trend1",names(p))]	#Extract parms from vector p
+    phi2 <- p[grep("const2|phi2|trend2",names(p))]	#Extract parms from vector p
+    y.hat <-(xxL %*% phi1) + (xxH %*% phi2) * G(z, p["gamma"], p["th"])
+    crossprod(yy - y.hat)
+  }
   res <- optim(c(phi_2,res$par), SS_2,  hessian = TRUE, method="BFGS", control = control)
-    
   #Results storing################
   coefs <- res$par
-  names(coefs) <- c(paste("phi1", 0:mL, sep="."),
-                               paste("phi2", 0:mH, sep="."),
-                               "gamma", "th")
+  names(coefs) <- c(coefnames,"gamma", "th") 
   gamma <- coefs["gamma"]
   th  <- coefs["th"]
   if (trace) cat("Optimized values fixed for regime 2 ",
-                 ": gamma = ", gamma, ", th = ", th,"\n");
+                 ": gamma = ", gamma, ", th = ", th,"; SSE = ", res$value, "\n");
   
   res$coefficients <- coefs
   res$mL <- mL
@@ -214,12 +236,13 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     }
     res$mTh <- mTh
   }
-
   res$thVar <- z
-  res$fitted <- F(coefs[grep("phi1", names(coefs))], coefs[grep("phi2", names(coefs))], gamma, th)
+  res$fitted <- F(coefs[grep("phi1|const1|trend1", names(coefs))], coefs[grep("phi2|const2|trend2", names(coefs))], gamma, th)
   res$residuals <- yy - res$fitted
   dim(res$residuals) <- NULL	#this should be a vector, not a matrix
   res$k <- length(res$coefficients)
+  res$ninc<-ninc
+  res$include<-include
   
 ################################
 
@@ -247,12 +270,13 @@ print.lstar <- function(x, ...) {
   NextMethod(...)
   cat("\nLSTAR model\n")
   x <- x$model.specific
+  ninc<-x$ninc
   order.L <- x$mL
   order.H <- x$mH
-  lowCoef <- x$coef[1:(order.L+1)]
-  highCoef<- x$coef[(order.L + 2):(order.L + order.H + 2)]
-  gammaCoef <- x$coef[order.L + order.H + 3]
-  thCoef <- x$coef[order.L + order.H + 4]
+  lowCoef <- x$coef[grep("phi1|const1|trend1", names(x$coef))]
+  highCoef <- x$coef[grep("phi2|const2|trend2", names(x$coef))]
+  gammaCoef <- x$coef["gamma"]
+  thCoef <- x$coef["th"]
   externThVar <- x$externThVar
   
   cat("Coefficients:\n")
@@ -313,12 +337,12 @@ summary.lstar <- function(object, ...) {
   ans$nlTest.pval  <- a[["Pr(>F)"]][2]
   
 ###############################
-
+  ninc    <- object$model.specific$ninc
   order.L <- object$model.specific$mL
   order.H <- object$model.specific$mH
-  ans$lowCoef <- object$coef[1:(order.L+1)]
-  ans$highCoef<- object$coef[(order.L+1)+1:(order.H+1)]
-  ans$thCoef <- object$coef[order.L+order.H+3]
+  ans$lowCoef <- object$coef[1:(order.L+ninc)]
+  ans$highCoef<- object$coef[(order.L+1+ninc):(order.H+2*ninc)]
+  ans$thCoef <- object$coef["th"]
   ans$externThVar <- object$model.specific$externThVar
   ans$mTh <- object$model.specific$mTh
   return(extend(summary.nlar(object), "summary.lstar", listV=ans))
@@ -411,12 +435,16 @@ plot.lstar <- function(x, ask=interactive(), legend=FALSE,
 }
 
 oneStep.lstar <- function(object, newdata, itime, thVar, ...){
+  include <- object$model.specific$include
+  if(!include %in%c("none","const")) stop("oneStep currently only implemented for include==const/none\n")
+  ninc<-object$model.specific$ninc
   mL <- object$model.specific$mL
   mH <- object$model.specific$mH
-  phi1 <- object$coefficients[1:(mL+1)]
-  phi2 <- object$coefficients[mL+1+ 1:(mH+1)]
-  gamma <- object$coefficients["gamma"]
-  c <- object$coefficients["th"]
+  coefs<-object$coefficients
+  phi1 <- coefs[grep("const1|trend1|phi1", names(coefs))]
+  phi2 <- coefs[grep("const2|trend2|phi2", names(coefs))]
+  gamma <- coefs["gamma"]
+  c <- coefs["th"]
   ext <- object$model.specific$externThVar
 
   if(ext) {
@@ -429,12 +457,15 @@ oneStep.lstar <- function(object, newdata, itime, thVar, ...){
   z <- plogis(z, c, 1/gamma)
 
   if(nrow(newdata)>1) {
-    xL <- cbind(1,newdata[,1:mL])
-    xH <- cbind(1,newdata[,1:mH])
+    reg<- switch(include,"const"=1, "none"=NULL)
+    xL <- cbind(reg,newdata[,1:mL])
+    xH <- cbind(reg,newdata[,1:mH])
   } else {
-    xL <- c(1,newdata[,1:mL])
-    xH <- c(1,newdata[,1:mH])
+    reg<- switch(include,"const"=1, "none"=NULL)
+    xL <- c(reg,newdata[,1:mL])
+    xH <- c(reg,newdata[,1:mH])
   }
+
   xL %*% phi1 + (xH %*% phi2) * z
 }
 

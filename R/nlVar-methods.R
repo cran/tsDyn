@@ -5,57 +5,89 @@ print.nlVar<-function(object,...){
 		cat("\n\nNon Linear Model\n")
 }
 
-logLik.nlVar<-function(object,...){
-	res<-object$residuals
+### logLik.VAR see: Luetkepohl, 3.4.5 (p. 89), Juselius (2006) p. 56. Hamilton 11.1.10, p. 293 gives -t/2 log(solve(S))
+logLik.nlVar <- function(object,...){
+	resids<-object$residuals
 	k<-object$k
 	t<-object$t
-	Sigmabest<-matrix(1/t*crossprod(res),ncol=k)
-	log(det(Sigmabest))
+	Sigma<-matrix(1/t*crossprod(resids),ncol=k)
+# 	res <- -(t*k/2)*log(2*pi) - (t/2)* log(det(Sigma)) -1/2 *sum(diag(resids %*% solve(Sigma) %*% t(resids)))
+	res <- -(t*k/2)*log(2*pi) -t*k/2 - (t/2)* log(det(Sigma)) 
+	return(res)
 }
 
-logLik.VECM<-function(object,r=1,...){
+### logLik.VECM see Hamilton 20.2.10, p. 637
+logLik.VECM <- function(object,r,...){
   t<-object$t
   k<-object$k
   
   if(object$model.specific$estim=="ML"){
-    S00<-object$model.specific$S00
+    S00<-object$model.specific$S00/t
     lambda<-object$model.specific$lambda
-    seq<-if(r==0) 0 else if(r%in%1:k) 1:r else warning("r cann't be greater than k (number of variables)")
-    
-    res <- -(t*k/2)*log(2*pi) - t*k/2 -(t/2)*log(det(S00))-(t/2)*sum(log(1-lambda[seq]))
+    Rank <- if(missing(r)) object$model.specific$r else r
+    seq<-if(Rank==0) 0 else if(Rank%in%1:k) 1:Rank else warning("r cann't be greater than k (number of variables)")
+    res <- -(t*k/2)*log(2*pi) - t*k/2 - (t/2)*log(det(S00)) - (t/2)*sum(log(1-lambda[seq]))
   } else {
     Sigmabest<-matrix(1/t*crossprod(object$residuals),ncol=k)
     res <- log(det(Sigmabest))
+    if(!missing(r)) warning("Note this is computing the LL from a model estimated by 2 OLS\n")
   }
   return(res)
 }
 
-AIC.nlVar<-function(object,..., k=2){
-	t<-object$t
-	t*logLik.nlVar(object)+k*(object$npar+object$model.specific$nthresh)
+#### Small function: get number of estimated parameters
+npar  <- function (object, ...)  
+  UseMethod("npar")
+ 
+npar.default<-function(object, ...) 
+  length(coef(object))
+
+npar.nlar<-function(object, ...) 
+  object$x
+
+npar.nlVar<-function(object, ...) 
+  object$npar+object$model.specific$nthresh
+
+npar.VECM<-function(object, ..., r) {
+  nVar<-object$k
+  Rank<-if(missing(r)) object$model.specific$r else r
+  slopePars <- prod(dim(coef(object)[,-grep("^ECT[0-9]*$", colnames(coef(object)))])) ## get numb of al params but the alpha (ECT)
+  nPar <- slopePars+2*nVar*Rank- Rank^2 ## formula: 2mr-r^2 (Cheng Phillips 2009, equ 1.2)
+  return(nPar)
 }
 
-AIC.VECM<-function(object,..., k=2,r){
-	kVar<-object$k
+
+#### AIC criterions
+AIC.nlVar<-function(object,..., k=2, fitMeasure=c("SSR", "LL")){
+	fitMeasure <- match.arg(fitMeasure)
+	t<-object$t
+	fit <- if(fitMeasure=="LL") -2*logLik.nlVar(object) else t*log(det(crossprod(residuals(object))/t))
+	fit+k*npar(object)
+}
+
+AIC.VECM<-function(object,..., k=2,r, fitMeasure=c("SSR", "LL")){
+	fitMeasure <- match.arg(fitMeasure)
 	Rank<-if(missing(r)) object$model.specific$r else r
 	t<-object$t
-#formula from Gonzalo pitarakis is p^2(k-1) +2pr -r^2+constan, here npar already contains pr
-	nParFree<- object$npar+kVar*Rank- Rank^2
-	t*logLik.VECM(object,r=Rank)+k*nParFree 
+	fit <- if(fitMeasure=="LL") -2*logLik.VECM(object,r=Rank) else t*log(det(crossprod(residuals(object))/t))
+	fit+k*npar(object, r=Rank)
 }
 
-BIC.nlVar<-function(object,..., k=log(object$t)){
+#### BIC criterions
+BIC.nlVar<-function(object,..., k=log(object$t), fitMeasure=c("SSR", "LL")){
+	fitMeasure <- match.arg(fitMeasure)
 	t<-object$t
-	t*logLik.nlVar(object)+k*(object$nparB+object$model.specific$nthresh)
+	fit <- if(fitMeasure=="LL") -2*logLik.nlVar(object) else t*log(det(crossprod(residuals(object))/t))
+	fit+k*npar(object)
 }
 
-BIC.VECM<-function(object,..., k=log(object$t),r){
-	kVar<-object$k
+BIC.VECM<-function(object,..., k=log(object$t),r, fitMeasure=c("SSR", "LL")){
+	fitMeasure <- match.arg(fitMeasure)
+	nVar<-object$k
 	Rank<-if(missing(r)) object$model.specific$r else r
 	t<-object$t
-	#formula from Gonzalo pitarakis is p^2(k-1) +2pr -r^2+constan, here npar already contains pr
-	nParFree<- object$npar+kVar*Rank- Rank^2
-	t*logLik.VECM(object,r=Rank)+k*nParFree 
+	fit <- if(fitMeasure=="LL") -2*logLik.VECM(object,r=Rank) else t*log(det(crossprod(residuals(object))/t))
+	fit+k*npar(object, r=Rank)
 }
 
 deviance.nlVar<-function(object,...){
@@ -66,8 +98,26 @@ residuals.nlVar<-function(object,...){
 	object$residuals
 }
 
-fitted.nlVar<-function(object,...){
-	object$fitted
+
+fitted.nlVar <- function(object, level=c("model", "original"),...){
+
+  level <- match.arg(level)
+  mod <- ifelse(inherits(object, "VECM"), "VECM", "VAR")
+
+  if(mod=="VAR"&&level=="original" &&attr(object, "varsLevel")=="level"){
+    warning("level='original' has no effect for VAR models in levels")
+    level <- "model"
+  }
+
+  if(level=="model"){
+    res <- object$fitted
+  } else {
+    original.data <- object$model[-c(1:(object$T-object$t-1),object$T),1:object$k]
+    series <- cbind(original.data, object$fitted)
+    res<- original.data+ object$fitted
+  }
+
+  return(res)
 }
 
 coef.nlVar<-function(object,...){

@@ -22,6 +22,7 @@ nnetTs <- function(x, m, d=1, steps=d, series, size, control=list(trace=FALSE)) 
 	res <- do.call(nnet::nnet, args)
 	res$k <- length(res$wts)
 	res$fitted <- res$fitted.values	
+	if(length(unique(res$fitted))/length(res$fitted)<0.1) warning("Fitted model seems to lead poor result. Please check result. ")
 	return(extend(nlar(str,
 		coefficients = res$wts,
 		residuals=res$residuals,
@@ -41,18 +42,26 @@ print.nnetTs <- function(x, ...) {
 oneStep.nnetTs <- function(object, newdata, ...)
 	nnet:::predict.nnet(object$model.specific, newdata)
 
-selectNNET <- function(x, m, d=1, steps=d, size=1:(m+1), maxit=1e3) {
+selectNNET <- function(x, m, d=1, steps=d, size=1:(m+1), maxit=1e3, trace=FALSE) {
 	IDS <- as.matrix( size )
 	colnames(IDS) <- c("size")
-	computedAIC <- function(j) 
-		AIC( nnetTs(x=x, m=m, d=d, steps=steps, size=j, control=list(maxit=maxit)) )
-	computedAIC <- apply(IDS, 1, computedAIC)
-	res <- cbind(IDS, AIC = computedAIC)
+
+	lis_models <- list()
+	for(i in 1:length(size)){
+	  lis_models[[i]] <- nnetTs(x=x, m=m, d=d, steps=steps, size=i, control=list(maxit=maxit, trace=trace))
+	}
+	
+
+	computedAIC <- sapply(lis_models, AIC)
+	computedBIC <- sapply(lis_models, BIC)
+
+	res <- cbind(IDS, AIC = computedAIC, BIC = computedBIC)
 	idSel <- sort(computedAIC, index=TRUE)$ix
 	idSel <- idSel[1:min(10, length(idSel))]
 	res <- data.frame(res[idSel,], row.names=NULL)
 	return(res)
 }
+
 
 showDialog.nnetTs <- function(x, ...) {
 	frRoot <- Frame()

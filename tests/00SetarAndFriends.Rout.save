@@ -1,8 +1,8 @@
 
-R Under development (unstable) (2012-02-01 r58249)
+R version 2.15.2 (2012-10-26) -- "Trick or Treat"
 Copyright (C) 2012 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
-Platform: x86_64-unknown-linux-gnu (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -20,21 +20,19 @@ Type 'q()' to quit R.
 
 > library(tsDyn)
 Loading required package: mgcv
-This is mgcv 1.7-13. For overview type 'help("mgcv-package")'.
+This is mgcv 1.7-22. For overview type 'help("mgcv-package")'.
 Loading required package: Matrix
 Loading required package: lattice
 
 Attaching package: ‘Matrix’
 
-The following object(s) are masked from ‘package:base’:
+The following object(s) are masked from ‘package:stats’:
 
-    det
+    toeplitz
 
 Loading required package: snow
 Loading required package: mnormt
 Loading required package: foreach
-Loading required package: iterators
-Loading required package: codetools
 Loading required package: MASS
 Loading required package: nlme
 > 
@@ -567,7 +565,7 @@ Equation short.run  1.705713  0.379160720 -0.008943793    0.3090020 -0.13887286
 Equation long.run   1.890135 -0.008113763  0.633504924   -0.1262766 -0.01764579
 
 > logLik(tvar)
-[1] -7.662705
+[1] 97.36061
 > AIC(tvar)
 [1] -686.9451
 > BIC(tvar)
@@ -970,7 +968,7 @@ Equation short.run -0.03654149  0.04545852    -0.10772057    0.04261369
 Equation long.run   0.09836556 -0.07041546     0.09321772   -0.03159638
 
 > logLik(tvecm)
-[1] -4.734758
+[1] -225.8391
 > AIC(tvecm)
 [1] -2220.684
 > BIC(tvecm)
@@ -1250,11 +1248,11 @@ Equation long.run  0.03657482    0.4066159  0.95954683  -0.33196199 -0.04690559
 Equation short.run 0.06729104    1.0311341  0.02329517  -0.05255831 -0.00905873
 Equation long.run  0.03657482    0.4066159  0.95954683  -0.33196199 -0.04690559
 > logLik(lin)
-[1] -4.53431
+[1] -273.9466
 > AIC(lin)
 [1] -2156.469
 > BIC(lin)
-[1] -2145.6
+[1] -2114.731
 > deviance(lin)
 [1] 175.6268
 > coef(lin)
@@ -1267,7 +1265,7 @@ Equation long.run  0.03657482    0.4066159  0.95954683  -0.33196199 -0.04690559
 #############
 Full sample size: 482 	End sample size: 480
 Number of variables: 2 	Number of estimated slope parameters 10
-AIC -2156.469 	BIC -2145.6 	SSR 175.6268
+AIC -2156.469 	BIC -2114.731 	SSR 175.6268
 
                    Intercept          short.run -1      long.run -1       
 Equation short.run 0.0673(0.0348).    1.0311(0.0695)*** 0.0233(0.0395)    
@@ -1368,7 +1366,7 @@ Equation long.run   -0.02727195 -0.07024155
 #############
 Full sample size: 482 	End sample size: 479
 Number of variables: 2 	Number of estimated slope parameters 12
-AIC -2146.536 	BIC -2133.506 	SSR 175.0327
+AIC -2144.536 	BIC -2090.304 	SSR 175.0327
 Cointegrating vector (estimated by OLS):
    short.run  long.run
 r1         1 -1.059351

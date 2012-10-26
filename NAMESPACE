@@ -5,7 +5,10 @@ importFrom(tseriesChaos, d2)
 importFrom(nnet, nnet)
 importFrom(tseries, na.remove)
 importFrom(Matrix, norm)
+importFrom(vars, irf)
+importFrom(vars, fevd)
 
+importClassesFrom(urca, ca.jo)
 
 if (exists("BIC", envir=asNamespace("stats"), inherits=FALSE)) {
     importFrom(stats, BIC)
@@ -14,15 +17,18 @@ if (exists("BIC", envir=asNamespace("stats"), inherits=FALSE)) {
 } 
 
 export(nlar, mse, MAPE, selectSETAR, selectLSTAR, selectNNET,
-       autopairs, autotriples, autotriples.rgl,
-       delta, delta.test, delta.lin, delta.lin.test,
-       llar, llar.predict, llar.fitted, sigmoid, dsigmoid,
+	autopairs, autotriples, autotriples.rgl,
+	delta, delta.test, delta.lin, delta.lin.test,
+	llar, llar.predict, llar.fitted, sigmoid, dsigmoid,
 	setar, lstar, star, availableModels,
-       nlarDialog, linear, isLinear, nnetTs, aar,
+	nlarDialog, linear, isLinear, nnetTs, aar,
 	star, addRegime, 
-       TVAR, TVECM,TVAR.LRtest, setar.sim, TVAR.sim, VAR.sim,TVECM.SeoTest, lineVar, VECM,setarTest,
-	MakeThSpec,BBCTest,KapShinTest, resVar, extendBoot, TVECM.sim, regime, getTh,
-	TVECM.HStest)
+	TVAR, TVECM, TVAR.sim, TVAR.boot, TVECM.sim, TVAR.LRtest, TVECM.SeoTest, TVECM.HStest,
+	lineVar, VECM, VAR.sim, VAR.boot, VECM.sim, 
+	setar.sim, setarTest,
+	MakeThSpec, BBCTest, KapShinTest, resVar, extendBoot, regime, getTh,
+	fevd, irf, VARrep, VECM_symbolic, rank.select, lags.select, rank.test,
+	predict_rolling)
 S3method(extend, list)
 S3method(isLinear, lstar)
 S3method(toLatex, setar)
@@ -39,6 +45,8 @@ S3method(plot, Hansen99Test)
 S3method(plot, TVECMSeo06Test)
 S3method(plot, TVECMHanSeo02Test)
 S3method(predict, nlar)
+S3method(predict, VAR)
+S3method(predict, VECM)
 S3method(print, nlar)
 S3method(toLatex, nlar)
 S3method(print, linear)
@@ -57,6 +65,8 @@ S3method(print, KapShin2006Test)
 S3method(print, TVARtest)
 S3method(print, TVECMHanSeo02Test)
 S3method(print, TVECMSeo06Test)
+S3method(print, rank.select)
+S3method(print, rank.test)
 S3method(summary, nlar)
 S3method(summary, linear)
 S3method(summary, setar)
@@ -69,6 +79,8 @@ S3method(summary, Hansen99Test)
 S3method(summary, TVARtest)
 S3method(summary, TVECMSeo06Test)
 S3method(summary, TVECMHanSeo02Test)
+S3method(summary, rank.select)
+S3method(summary, rank.test)
 S3method(print, summary.nlar)
 S3method(print, summary.linear)
 S3method(print, summary.setar)
@@ -92,9 +104,11 @@ S3method(BIC, nlVar)
 S3method(BIC, VECM)
 S3method(addRegime, star)
 S3method(regime, setar)
+S3method(regime, lstar)
 S3method(regime, nlVar)
 S3method(getTh, default)
 S3method(getTh, setar)
+S3method(getTh, lstar)
 S3method(getTh, summary.setar)
 S3method(getTh, nlVar)
 S3method(logLik, nlVar)
@@ -106,6 +120,13 @@ S3method(print, llar)
 S3method(plot, llar)
 S3method(as.data.frame, llar)
 S3method(vcov, VAR)
+S3method(vcov, lstar)
+S3method(confint, lstar)
+S3method(irf, nlVar)
+S3method(predict_rolling, nlVar)
+S3method(fevd, nlVar)
+S3method(VARrep, VECM)
+S3method(VARrep, VAR)
 
 
 useDynLib(tsDyn)

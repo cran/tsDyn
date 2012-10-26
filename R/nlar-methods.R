@@ -183,6 +183,36 @@ regime.nlVar <- function(object,initVal=TRUE,timeAttr=TRUE,...) {
 }
 
 
+regime.lstar <- function(object, initVal=TRUE,timeAttr=TRUE,discretize=TRUE, ...){
+
+  thVar <- object$model.specific$thVar
+  str <- object$str
+
+  reg <- G(z=thVar, gamma=coef(object)["gamma"], th=getTh(object))
+
+  if(discretize) {
+    reg <- ifelse(reg <=0.5, 1,2)
+  }
+
+  if(timeAttr){
+    attributes(reg) <- object$model.specific$timeAttributes
+    if(initVal) {
+      ans <- reg
+    } else {
+      ans <- window(reg, start=time(reg)[length(str$x)-length(str$yy)+1])
+    }
+  } else {
+    if(initVal){
+      ans <- reg
+    } else {
+      ans <- reg[-c(1:(length(str$x)-length(str$yy)))]
+    }
+  }
+
+  return(ans)
+
+}
+
 
 #get the threshold for setar and nlVar
 getTh<- function (object, ...)  
@@ -201,16 +231,29 @@ getTh.setar<-function(object,...){
   getTh.default(object)
 }
 
+getTh.lstar<-function(object,...){
+  object <-object$coef
+  object["th"]
+}
+
 getTh.summary.setar<-function(object,...){
   object$th
 }
 
 getTh.nlVar<-function(object,...){
-  th<-object$model.specific$Thresh
-  if(length(th)==1)
-    names(th)<-"th"
-  else
-    names(th)<-c("th1", "th2")
+  nth <- object$model.specific$nthresh
+
+  if(nth>0){
+    th<-object$model.specific$Thresh
+    if(length(th)==1){
+      names(th)<-"th"
+    } else{
+      names(th)<-c("th1", "th2")
+    }
+  } else {
+    th <- NULL
+  }
+
   return(th)
 }
 
@@ -307,39 +350,6 @@ plot.nlar <- function(x, ask = interactive(), ...) {
 		main="Average Mutual Information of residuals", ylim=ylim)
   par(op)
   invisible(x)
-}
-
-predict.nlar <- function(object, newdata, n.ahead=1, simulate=FALSE, ...)
-{
-
-  if(missing(newdata)) 
-    newdata <- object$str$x
-
-  res <- newdata
-  n.used <- length(res)
-  m <- object$str$m
-  d <- object$str$d
-  sd <- sqrt( mse(object) )
-  steps <- object$str$steps
-  
-  tsp(res) <- NULL
-  class(res) <- NULL
-
-  res <- c(res, rep(0, n.ahead))
-  xrange <- (m-1)*d + steps - ((m-1):0)*d
-
-  for(i in (n.used + 1:n.ahead)) {
-    res[i] <- oneStep(object, newdata = t(as.matrix(res[i - xrange])),
-                      itime=(i - n.used), ...)
-    if(simulate)
-      res[i] <- res[i] + rnorm(1, mean=0, sd=sd)
-  }
-
-  pred <- res[n.used + 1:n.ahead]
-  pred <- ts(pred, start = tsp(newdata)[2] + deltat(newdata),
-             frequency=frequency(newdata))
-  return(pred)
-  
 }
 
 oneStep <- function(object, newdata, ...)

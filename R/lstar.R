@@ -108,37 +108,48 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
 		    nTh=200, 
 		    trim=0.1,
 		    nGamma=40,
-		    gammaInt=c(1,100)
+		    gammaInt=c(1,100), 
+		    thInt=NA, 
+		    candidates=NA
     )
-    # Add if user defined, check if names confirm (code taken from optim)
+    # Add if user defined, check if names correspond (code taken from optim)
     nmsC <- names(start.con)
     start.con[(namc <- names(starting.control))] <- starting.control
     if (length(noNms <- namc[!namc %in% nmsC])) 
         warning("unknown names in starting.control: ", paste(noNms, collapse = ", "))
 
-    # Maximum and minimum values for c
-    interv.Th <- quantile(as.ts(z), c(start.con$trim, 1-start.con$trim)) # percentil 10 de z
-    
-    for(newGamma in seq(start.con$gammaInt[1], start.con$gammaInt[2], length.out=start.con$nGamma)) {
-      for(newTh in seq(interv.Th[1], interv.Th[2], length.out=start.con$nTh)) {
-        
-        # We fix the linear parameters.
-        cost <- crossprod(lm.fit(cbind(xxL, xxH * G(z, newGamma, newTh)), yy)$residuals)
+  ## Set grid search values
+    interv.Th <- quantile(as.ts(z), c(start.con$trim, 1-start.con$trim)) # "trim" percentil of z
+    if(is.na(start.con$thInt)) interv.Th <- c(min(start.con$thInt[1], interv.Th[1], na.rm=TRUE), min(start.con$thInt[2], interv.Th[2], na.rm=TRUE))
+    Gammas <- seq(start.con$gammaInt[1], start.con$gammaInt[2], length.out=start.con$nGamma)
+    ths <- seq(interv.Th[1], interv.Th[2], length.out=start.con$nTh) 
 
-        if(cost <= bestCost) {
-          bestCost <- cost;
-          gamma <- newGamma;
-          th <- newTh;
-#           phi1 <- new_phi1
-#           phi2 <- new_phi2
-        }
+    IDS <- as.matrix(expand.grid(Gammas, ths) )
+
+    if(!is.na(start.con$candidates)){
+      li <- start.con$candidates
+      if(length(li)!=2 | any(names(li)!=c("th", "gamma")) | length(li[[1]])!=length(li[[2]])){
+	stop("Error in specification of starting.control$candidates: should be a list with element 'th' and 'gamma' of same length\n")
+      }
+      IDS <- rbind(IDS, cbind(li[["gamma"]], li[["th"]]))
+    }
+  ## Grid search: Loop over values
+    for(i in 1:nrow(IDS)){
+
+      # We fix the linear parameters.
+      cost <- crossprod(lm.fit(cbind(xxL, xxH * G(z, IDS[i,1], IDS[i,2])), yy)$residuals)
+
+      if(cost <= bestCost) {
+	bestCost <- cost;
+	gamma <- IDS[i,1]
+	th <- IDS[i,2]
       }
     }
 
     if (trace) {
       cat("Starting values fixed: gamma = ", gamma,", th = ", th, 
           "; SSE = ", bestCost, "\n")
-      if(gamma%in%start.con$gammaInt) cat("Grid search selected lower/upper bound gamma (default [1,100]). 
+      if(gamma%in%start.con$gammaInt) cat("Grid search selected lower/upper bound gamma (was: ", start.con$gammaInt, "]). 
 					  Might try to widen bound with arg: 'starting.control=list(gammaInt=c(1,200))'\n")
     }
   }
@@ -180,13 +191,17 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     gamma <- p[1]   #Extract parms from vector p
     th <- p[2]      #Extract parms from vector p
 
+    trans <- G(z, gamma, th)
+    m_trans <- mean(trans, na.rm=TRUE)
+    pen <- if(min(m_trans, 1-m_trans, na.rm=TRUE)< 0.05) 1/(0.05-m_trans) else 0
+
     # First fix the linear parameters
-    xx <- cbind(xxL, xxH * G(z, gamma, th))
+    xx <- cbind(xxL, xxH * trans)
     if(any(is.na(as.vector(xx)))) {
       message('lstar: missing value during computations')
       return (Inf)
     }
-    crossprod(lm.fit(xx, yy)$residuals)
+    crossprod(lm.fit(xx, yy)$residuals) + pen
   }
  
   ## Numerical minimization##########
@@ -209,15 +224,21 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
   names(phi_2) <-coefnames
   names(res$par) <- c("gamma", "th")
 
-  ## Optimization: second quick step to get hessian for all parameters########
+  ## Optimization: second quick step to get hessian for all parameters ########
   SS_2 <- function(p) {
     phi1 <- p[grep("const1|phi1|trend1",names(p))]	#Extract parms from vector p
     phi2 <- p[grep("const2|phi2|trend2",names(p))]	#Extract parms from vector p
     y.hat <-(xxL %*% phi1) + (xxH %*% phi2) * G(z, p["gamma"], p["th"])
     crossprod(yy - y.hat)
   }
-  res <- optim(c(phi_2,res$par), SS_2,  hessian = TRUE, method="BFGS", control = control)
-  #Results storing################
+  res$par <- c(phi_2,res$par)
+  res$hessian <- optimHess(res$par , SS_2)
+  if(trace & qr(res$hessian, 1e-07)$rank != length(res$par)){
+    cat("Problem: singular hessian\n")
+  }
+
+
+  # Results storing ################
   coefs <- res$par
   names(coefs) <- c(coefnames,"gamma", "th") 
   gamma <- coefs["gamma"]
@@ -236,14 +257,15 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     }
     res$mTh <- mTh
   }
-  res$thVar <- z
+  res$thVar <- c(rep(NA, length(x)-length(z)),z)
   res$fitted <- F(coefs[grep("phi1|const1|trend1", names(coefs))], coefs[grep("phi2|const2|trend2", names(coefs))], gamma, th)
   res$residuals <- yy - res$fitted
   dim(res$residuals) <- NULL	#this should be a vector, not a matrix
   res$k <- length(res$coefficients)
   res$ninc<-ninc
   res$include<-include
-  
+  res$timeAttributes <- attributes(x)
+
 ################################
 
   return(extend(nlar(str, 
@@ -259,12 +281,8 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
 	
 
 #############################################
-  #Transition function
-  #y: variable
-  #g: smoothing parameter
-  #c: threshold value
-G <- function(y, g, th) 
-  plogis(y, th, 1/g)
+  #Transition function G: moved to star.R
+
   
 print.lstar <- function(x, ...) {
   NextMethod(...)
@@ -308,15 +326,11 @@ summary.lstar <- function(object, ...) {
   ## SE for ML estimates (from optim), taken from 'arma.R' in package tseries
   coef<- object$coefficients
   n <- object$str$n.used
-  rank <- qr(object$model.specific$hessian, 1e-07)$rank
-  if(rank != length(coef)) {
+  vc <- vcov(object)
+  if(all(is.na(vc))) {
     se <- rep(NA, length(coef))
-    warning("singular Hessian\n")
-  } else{
-    di <- diag(2*object$model.specific$value/n*solve(object$model.specific$hessian))
-    if(any(di < 0))
-      warning("Hessian negative-semidefinite\n")
-    se <- sqrt(di)
+  } else {
+    se <- sqrt(diag(vc))
   }
 
   tval <- coef/ se
@@ -326,7 +340,7 @@ summary.lstar <- function(object, ...) {
 
   ## Non-linearity test############
   xx <- object$str$xx
-  sX <- object$model.specific$thVar
+  sX <- tail(object$model.specific$thVar, -(object$str$n.used-nrow(object$str$xx)))
   dim(sX) <- NULL
   xx1<- xx*sX		#predictors set B (approximated non-linear component)
   yy <- object$str$yy
@@ -382,7 +396,7 @@ plot.lstar <- function(x, ask=interactive(), legend=FALSE,
   xx <- str$xx
   yy <- str$yy
   nms <- colnames(xx)
-  z <- x$model.specific$thVar
+  z <- tail(x$model.specific$thVar, -(x$str$n.used-nrow(x$str$xx)))
   z <- plogis(z, x$coefficients["th"], 1/x$coefficients["gamma"])
   regime.id <- cut(z, breaks=quantile(z, 0:5/5), include.lowest=TRUE)
   regime.id <- as.numeric(regime.id)
@@ -434,6 +448,27 @@ plot.lstar <- function(x, ask=interactive(), legend=FALSE,
   invisible(x)
 }
 
+vcov.lstar <- function(object, ...){
+  n <- object$str$n.used
+  coef<- object$coefficients
+  rank <- qr(object$model.specific$hessian, 1e-07)$rank
+
+  if(rank != length(coef(object))) {
+    vc <- matrix(NA, length(coef),length(coef))
+    warning("singular Hessian\n")
+  } else{
+    vc <- 2*object$model.specific$value/n*solve(object$model.specific$hessian)
+    if(any(diag(vc) < 0))
+      warning("Hessian negative-semi definite\n")
+  }
+
+return(vc)
+}
+
+confint.lstar <- function(object, parm, level = 0.95, ...){
+  confint.default(object, parm=parm, level=level, ...)
+}
+
 oneStep.lstar <- function(object, newdata, itime, thVar, ...){
   include <- object$model.specific$include
   if(!include %in%c("none","const")) stop("oneStep currently only implemented for include==const/none\n")
@@ -469,31 +504,6 @@ oneStep.lstar <- function(object, newdata, itime, thVar, ...){
   xL %*% phi1 + (xH %*% phi2) * z
 }
 
-#Exhaustive search over a grid of model parameters
-#x: time series
-#m: maximum autoregressive order
-#d: time delay
-#steps: steps ahead
-selectLSTAR <- function(x, m, d=1, steps=d, mL = 1:m, mH = 1:m, thDelay=0:(m-1)) {
-  op <- options(warn=-1)
-  computeAIC <- function(parms) {
-    mLVal <- parms[2]
-    mHVal <- parms[3]
-    thDelayVal <- parms[1]
-    m <- max(mLVal,mHVal,thDelayVal+1)
-    return(AIC( lstar(x, m=m, mL=mLVal, mH=mHVal, thDelay=thDelayVal, trace=FALSE,
-                      control=list(maxit=1e2)) ) )
-  }
-  IDS <- as.matrix( expand.grid(thDelay, mL, mH) )
-  colnames(IDS) <- c("thDelay","mL","mH")
-  computedAIC <- apply(IDS, 1, computeAIC)
-  options(op)
-  res <- cbind(IDS, AIC = computedAIC)
-  idSel <- sort(computedAIC, index=TRUE)$ix
-  idSel <- idSel[1:min(10, length(idSel))]
-  res <- data.frame(res[idSel,], row.names=NULL)
-  return(res)
-}
 
 showDialog.lstar <- function(x, ...) {
   vML  <- tclVar(1)

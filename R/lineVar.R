@@ -1,4 +1,4 @@
-lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), model=c("VAR", "VECM"), I=c("level", "diff"),beta=NULL, estim=c("2OLS", "ML"),LRinclude=c("none", "const", "trend","both"))
+lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), model=c("VAR", "VECM"), I=c("level", "diff", "ADF"),beta=NULL, estim=c("2OLS", "ML"),LRinclude=c("none", "const", "trend","both"))
 {
 y <- as.matrix(data)
 Torigin <- nrow(y) 	#Size of original sample
@@ -25,7 +25,7 @@ if(is.null(colnames(data)))
 ###Check args
 include<-match.arg(include)
 LRinclude<-match.arg(LRinclude)
-if(LRinclude=="const")  include<-"none"
+if(LRinclude%in%c("const", "both"))  include<-"none"
 ninclude<-switch(include, "const"=1, "trend"=1,"none"=0, "both"=2)
 model<-match.arg(model)
 estim<-match.arg(estim)
@@ -51,13 +51,32 @@ DeltaY<-diff(y)[(p+1):(T-1),]
 Xminus1<-embed(y,p+2)[,(k+1):(k+k)]
 DeltaX<-embed(diff(y),p+1)[,-(1:k)]
 
+# if(model=="VAR"){
+#   Z<-X
+#   Y<-Y}
+# if(model=="VECM"|I=="diff"){
+#   Z<-DeltaX
+#   Y<-DeltaY
+#   t<-t-1}
+
 if(model=="VAR"){
-  Z<-X
-  Y<-Y}
-if(model=="VECM"|I=="diff"){
+  if(I=="level"){
+    Z<-X
+    Y<-Y
+  } else if(I=="diff"){
+    Z<-DeltaX
+    Y<-DeltaY
+    t<-t-1
+  } else if(I=="ADF"){
+    Z<-cbind(Xminus1, DeltaX)
+    Y<-DeltaY
+    t<-t-1
+  }
+} else if(model=="VECM"){
   Z<-DeltaX
   Y<-DeltaY
-  t<-t-1}
+  t<-t-1
+}
 
 ###Regressors matrix
 if(include=="const")
@@ -72,41 +91,43 @@ else if(include=="both")
 if(model=="VECM"&estim=="2OLS"){
 	#beta has to be estimated
   beta.estimated<-if(is.null(beta)) TRUE else FALSE
-  if(is.null(beta) ){  
+  if(is.null(beta) ){
+
+  ## build LRplus: deterministic/exogeneous regressor in coint
     if(class(LRinclude)=="character"){
-      LRplus<-switch(LRinclude, "none"=rep(0,T),"const"=rep(1,T),"trend"=seq_len(T),"both"=rep(1,T),seq_len(T))
-    }
-    else if(class(LRinclude)%in%c("matrix", "numeric"))
+      LRplus <-switch(LRinclude, "none"=NULL,"const"=rep(1,T),"trend"=seq_len(T),"both"=cbind(rep(1,T),seq_len(T)))
+      LRinc_name <- switch(LRinclude, "const"="const", "trend"="trend", "both"=c("const", "trend"), "none"=NULL)
+      LRinc_dim <- switch(LRinclude, "const"=1, "trend"=1, "both"=2, "none"=0)
+    } else if(class(LRinclude)%in%c("matrix", "numeric")) {
       LRplus<-LRinclude
-    else
+    } else{
       stop("Argument LRinclude badly given")
-    if(class(LRinclude)=="character") {
-      if(LRinclude=="none"){
-        LRplusplus<-matrix(0, nrow=T, ncol=1)
-        cointLM<-lm(y[,1] ~  y[,-1]-1)
-      } else{
-        cointLM<-lm(y[,1] ~  y[,-1]-1+ LRplus)
-        LRplusplus<-as.matrix(LRplus)%*%cointLM$coef[-1]
-      }
     }
-    else{
+  ## run coint regression
+    if(LRinclude=="none"){
+      cointLM<-lm(y[,1] ~  y[,-1]-1)
+    } else {
       cointLM<-lm(y[,1] ~  y[,-1]-1+ LRplus)
-      LRplusplus<-as.matrix(LRplus)%*%cointLM$coef[-1]
+      Xminus1 <- cbind(Xminus1, tail(LRplus,nrow(Xminus1)))
     }
     
-    betaLT<-coint<-c(1,-cointLM$coef[1:(k-1)])
-    betaLT_std <- c(1,summary(cointLM)$coef[1:(k-1),2])
-    names(betaLT_std)<-colnames(data)
-  }
-else{
+    betaLT<-coint<-c(1,-cointLM$coef)
+    betaLT_std <- c(1,summary(cointLM)$coef[,2])
+    names(betaLT_std)<-c(colnames(data), LRinc_name)
+
+## case beta pre-estimated
+  } else {
+    if(length(beta)!=k-1) stop("Arg 'beta' should be of length k-1")
     if(LRinclude!="none")
       warning("Arg LRinclude not taken into account when beta is given by user")
+      LRinc_name <- NULL
+      LRinc_dim <- 0
     coint<-c(1, -beta)
     betaLT<-c(1,-beta)
   }
 
-  coint_export<-matrix(coint, nrow=k, dimnames=list(colnames(data),"r1"))
-  betaLT<-matrix(betaLT, nrow=k, dimnames=list(colnames(data),"r1"))
+  coint_export<-matrix(coint, nrow=k+LRinc_dim , dimnames=list(c(colnames(data),LRinc_name), "r1"))
+  betaLT<-matrix(betaLT, nrow=k+LRinc_dim , dimnames=list(c(colnames(data),LRinc_name),"r1"))
   ECTminus1<-Xminus1%*%betaLT
   Z<-cbind(ECTminus1,Z)
 }
@@ -122,9 +143,10 @@ beta.estimated<-if(is.null(beta)) TRUE else FALSE
     reg_res2<-lm.fit(Z,Xminus1)
     v<-residuals(reg_res2)
     #Auxiliary regression 3
-    if(LRinclude=="const"){
-      reg_res3<-lm.fit(Z,matrix(1, nrow=nrow(Z)))
-      v<-cbind(v,residuals(reg_res3))
+    if(LRinclude!="none"){
+      add <- switch(LRinclude, "const"=matrix(1, nrow=nrow(Z)), "trend"=matrix(1:nrow(Z), nrow=nrow(Z)), "both"=cbind(1,1:nrow(Z)))
+      reg_res3<-lm.fit(Z,add)
+      v<-cbind(v,residuals(reg_res3)) # equ 20.2.46 in Hamilton 
     }
     #Moment matrices
     S00<-crossprod(u)
@@ -146,13 +168,14 @@ beta.estimated<-if(is.null(beta)) TRUE else FALSE
     z0<-t(u)%*%v%*%ve_no[,1:r]%*%t(ve_no[,1:r])
 
       ###Slope parameters
-    if(LRinclude=="const"){
-      ECTminus1<-cbind(Xminus1,1)%*%ve_4
+    if(LRinclude!="none"){
+      ECTminus1<-cbind(Xminus1,add)%*%ve_4
     }else{
       ECTminus1<-Xminus1%*%ve_4
     }
     Z<-cbind(ECTminus1,Z)
-    dimnames(ve_4)<-list(c(colnames(data), if(LRinclude=="const") "const" else NULL), paste("r", 1:r, sep=""))
+    coin_ve_names <- switch(LRinclude, "const"="const", "trend"="trend", "both"=c("const", "trend"), "none"=NULL)
+    dimnames(ve_4)<-list(c(colnames(data), coin_ve_names), paste("r", 1:r, sep=""))
     betaLT<-ve_4
   }else{  #end beta to be estimated
     betaLT<-beta
@@ -172,18 +195,19 @@ res<-Y-fitted
 npar<-ncol(B)*nrow(B)
 rownames(B)<-paste("Equation",colnames(data))
 LagNames<-c(paste(rep(colnames(data),length(Lags)), -rep(Lags, each=k)))
+if(I=="ADF") LagNames <- paste("D", LagNames,sep="_")
 ECT<- if(model=="VECM") paste("ECT", if(r>1) 1:r else NULL, sep="") else NULL
+Xminus1Names<- if(I=="ADF") paste(colnames(data),"-1",sep="") else NULL
 BnamesInter<-switch(include,"const"="Intercept","none"=NULL,"trend"="Trend","both"=c("Intercept","Trend"))
-Bnames<-c(ECT,BnamesInter, LagNames)
+Bnames<-c(ECT,BnamesInter,Xminus1Names, LagNames)
 colnames(B)<-Bnames
 
 
 ###Y and regressors matrix to be returned
 naX<-rbind(matrix(NA, ncol=ncol(Z), nrow=T-t), Z)
 rownames(naX)<-rownames(data)
-colnames(naX)<-Bnames
 YnaX<-cbind(data, naX)
-
+colnames(YnaX)<-c(colnames(data),Bnames)
 
 ###Return outputs
 model.specific<-list()

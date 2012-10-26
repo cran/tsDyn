@@ -1,57 +1,162 @@
 library(tsDyn)
+
+
 data(zeroyld)
+data(barry)
 
 
 
 
 ## Test a few VECM models
-myVECM1<-VECM(zeroyld, lag=1)
-myVECM2<-VECM(zeroyld, lag=3, include="const")
-myVECM2a<-VECM(zeroyld, lag=3, include="const", beta=-1)
-myVECM3<-VECM(zeroyld, lag=1, estim="ML")
-myVECM4<-VECM(zeroyld, lag=3, estim="ML")
+vecm_OLS_l1_co <-VECM(barry, lag=1)
+vecm_OLS_l3_co <-VECM(barry, lag=3, include="const")
+vecm_OLS_l3_co_betaGiven<-VECM(barry, lag=3, include="const", beta=c(0.1, -0.05))
+vecm_OLS_l1_tr <-VECM(barry, lag=1, include="trend")
+vecm_OLS_l1_bo <-VECM(barry, lag=1, include="both")
+vecm_OLS_l1_no <-VECM(barry, lag=1, include="none")
+vecm_OLS_l1_LRco <-VECM(barry, lag=1, LRinclude="const")
+vecm_OLS_l1_LRtr <-VECM(barry, lag=1, LRinclude="trend")
+vecm_OLS_l1_LRtr_noCo <-VECM(barry, lag=1, LRinclude="trend", include="none")
+vecm_OLS_l1_LRbo <-VECM(barry, lag=1, LRinclude="both")
+
+vecm_ML_l1_co <-VECM(barry, lag=1, estim="ML")
+vecm_ML_l3_co <-VECM(barry, lag=3, include="const", estim="ML")
+# vecm_ML_l3_co_betaGiven<-VECM(barry, lag=3, include="const", beta=-1, estim="ML")
+vecm_ML_l1_tr <-VECM(barry, lag=1, include="trend", estim="ML")
+vecm_ML_l1_bo <-VECM(barry, lag=1, include="both", estim="ML")
+vecm_ML_l1_no <-VECM(barry, lag=1, include="none", estim="ML")
+vecm_ML_l1_LRco <-VECM(barry, lag=1, LRinclude="const", estim="ML")
+vecm_ML_l1_LRtr <-VECM(barry, lag=1, LRinclude="trend", estim="ML")
+vecm_ML_l1_LRtr_noCo <-VECM(barry, lag=1, LRinclude="trend", include="none", estim="ML")
+vecm_ML_l1_LRbo <-VECM(barry, lag=1, LRinclude="both", estim="ML")
+
+vecm_all <- list(
+		vecm_OLS_l1_co, vecm_OLS_l3_co, vecm_OLS_l3_co_betaGiven, vecm_OLS_l1_tr, 
+		vecm_OLS_l1_bo, vecm_OLS_l1_no, vecm_OLS_l1_LRco, vecm_OLS_l1_LRtr, 
+		vecm_OLS_l1_LRtr_noCo, vecm_OLS_l1_LRbo, 
+		vecm_ML_l1_co, vecm_ML_l3_co,  vecm_ML_l1_tr, 
+		vecm_ML_l1_bo, vecm_ML_l1_no, vecm_ML_l1_LRco, vecm_ML_l1_LRtr, 
+		vecm_ML_l1_LRtr_noCo, vecm_ML_l1_LRbo)
+
+names(vecm_all) <-c("vecm_OLS_l1_co", "vecm_OLS_l3_co", "vecm_OLS_l3_co_betaGiven", "vecm_OLS_l1_tr", 
+		"vecm_OLS_l1_bo", "vecm_OLS_l1_no", "vecm_OLS_l1_LRco", "vecm_OLS_l1_LRtr", 
+		"vecm_OLS_l1_LRtr_noCo", "vecm_OLS_l1_LRbo", 
+		"vecm_ML_l1_co", "vecm_ML_l3_co", " vecm_ML_l1_tr", 
+		"vecm_ML_l1_bo", "vecm_ML_l1_no", "vecm_ML_l1_LRco", "vecm_ML_l1_LRtr", 
+		"vecm_ML_l1_LRtr_noCo", "vecm_ML_l1_LRbo")
+
+vecm_ML <- vecm_all[grep("ML", names(vecm_all))]
+
+lapply(vecm_all, print)
+lapply(vecm_all, summary)
+
+lapply(vecm_all, function(x) head(residuals(x), 3))
+lapply(vecm_all, function(x) head(fitted(x), 3))
+lapply(vecm_all, function(x) head(fitted(x, level="original"), 3))
+sapply(vecm_all, deviance)
 
 
-summary(myVECM1)
-summary(myVECM2)
-summary(myVECM2a)
-summary(myVECM3)
-summary(myVECM4)
 
-myVECM1$model.specific$coint
-myVECM1$model.specific$beta
+## logLik
+sapply(vecm_all, logLik)
+sapply(vecm_ML, logLik, r=0)
+sapply(vecm_ML, logLik, r=1)
+sapply(vecm_ML, logLik, r=2)
 
-myVECM2a$model.specific$coint
-myVECM2a$model.specific$beta
+## AIC/BIC
+sapply(vecm_all, AIC)
+sapply(vecm_ML, AIC, r=0)
+sapply(vecm_ML, AIC, r=1)
+sapply(vecm_ML, AIC, r=2)
+sapply(vecm_ML, AIC, r=0, fitMeasure="LL")
+sapply(vecm_ML, AIC, r=1, fitMeasure="LL")
+sapply(vecm_ML, AIC, r=2, fitMeasure="LL")
 
-myVECM3$model.specific$coint
-myVECM3$model.specific$beta
-
-
-###Check Johansen MLE: comparing with vars package
-if(require(vars)){
-data(Canada)
-
-myVECM<-VECM(Canada, lag=1, include="const", estim="ML")
-VECM_vars<-cajorls(ca.jo(Canada, spec="trans"))
-print(all.equal(VECM_vars$beta, myVECM$model.specific$coint, check.attributes=FALSE))
+sapply(vecm_all, BIC)
+sapply(vecm_ML, BIC, r=0)
+sapply(vecm_ML, BIC, r=0, fitMeasure="LL")
 
 
-## Check LL
-l1<-2*(logLik(myVECM,r=4)-logLik(myVECM,r=3))
-l2<-2*(logLik(myVECM,r=3)-logLik(myVECM,r=2))
-l3<-2*(logLik(myVECM,r=2)-logLik(myVECM,r=1))
-l4<-2*(logLik(myVECM,r=1)-logLik(myVECM,r=0))
-print(c(l1,l2,l3,l4))
-logLik(myVECM,r=5)
-print(ca.jo(Canada, spec="trans"))
-print(all.equal(c(l1, l2, l3, l4),ca.jo(Canada, spec="trans")@teststat))
+## coint
+sapply(vecm_all, function(x) x$model.specific$coint )
+sapply(vecm_all, function(x) x$model.specific$beta)
 
-print(AIC(myVECM,r=0, k=2*log(log(myVECM$t))))
-print(AIC(myVECM,r=1, k=2*log(log(myVECM$t))))
-print(AIC(myVECM,r=2, k=2*log(log(myVECM$t))))
-print(AIC(myVECM,r=3, k=2*log(log(myVECM$t))))
-print(AIC(myVECM,r=4, k=2*log(log(myVECM$t))))
+### VARrep
+lapply(vecm_all, VARrep)
+
+### fevd
+lapply(vecm_all, function(x) sapply(fevd(x, n.ahead=2), head))
+
+### irf
+vecm_irf <- vecm_all[-grep("l1_no|bo", names(vecm_all))] ## does not work for these models
+lapply(vecm_irf, function(x) sapply(irf(x, runs=1)$irf,head,2))
+
+## predict
+lapply(vecm_all[-c(5, 6, 9, 10, 14, 15, 18, 19)], predict,  n.ahead=2)
+lapply(vecm_all[-c(5, 6, 9, 10, 14, 15, 18, 19)], function(x) sapply(tsDyn:::predictOld.VECM(x, n.ahead=2)$fcst, function(y) y[,"fcst"]))
+
+lapply(vecm_all, predict_rolling, nroll=2)
+lapply(vecm_all, predict_rolling, nroll=2, refit.every=1)
+
+### rank test
+vecm_ML_rtest <- vecm_ML[-grep("vecm_ML_l1_LRtr_noCo|vecm_ML_l1_LRbo", names(vecm_ML))] ## does not work for these models
+
+rank.tests <- lapply(vecm_ML_rtest , rank.test)
+rank.tests_rnull1 <- lapply(vecm_ML_rtest , rank.test, r_null=1)
+rank.tests_tr <- lapply(vecm_ML_rtest , rank.test, type="trace")
+rank.tests_tr_rnull1 <- lapply(vecm_ML_rtest , rank.test, r_null=1, type="trace")
+
+rank.tests.all <- c(rank.tests , rank.tests_rnull1, rank.tests_tr,rank.tests_tr_rnull1 )
+
+lapply(rank.tests.all, print)
+lapply(rank.tests.all, summary)
 
 
-}
+### rank select
+data(barry)
+r_sel <- rank.select(barry)
+r_sel_tre <- rank.select(barry, include="trend")
+r_sel_none <- rank.select(barry, include="none")
+r_sel_both <- rank.select(barry, include="both")
+
+r_sel$LLs
+r_sel$AICs
+
+r_sel_tre$LLs
+r_sel_tre$AICs
+
+r_sel_none$LLs
+r_sel_none$AICs
+
+r_sel_both$LLs
+r_sel_both$AICs
+
+
+###################################
+####### predict_rolling check
+###################################
+n_ca<- nrow(barry)
+
+#### VECM No refit lag=1
+pred_vec_roll_l1 <- predict_rolling(object=VECM(barry, lag=1), nroll=10, n.ahead=1)
+pred_vec_l1_1 <- predict(VECM(tsDyn:::myHead(barry,n_ca-10), lag=1), n.ahead=1, newdata=barry[((n_ca-1):n_ca)-10,,drop=FALSE])
+pred_vec_l1_2 <- predict(VECM(tsDyn:::myHead(barry,n_ca-10), lag=1), n.ahead=1, newdata=barry[((n_ca-1):n_ca)-9,,drop=FALSE])
+all.equal(rbind(pred_vec_l1_1, pred_vec_l1_2), head(pred_vec_roll_l1,2), check=FALSE)
+all.equal(predict(VECM(tsDyn:::myHead(barry,n_ca-10), lag=1), n.ahead=1, newdata=barry[((n_ca-1):n_ca)-1,,drop=FALSE]), tail(pred_vec_roll_l1,1), check=FALSE)
+
+
+
+#### VECM No refit lag=3
+pred_vec_roll <- predict_rolling(object=VECM(barry, lag=3), nroll=10, n.ahead=1)
+pred_vec1 <- predict(VECM(tsDyn:::myHead(barry,n_ca-10), lag=3), n.ahead=1, newdata=barry[((n_ca-3):n_ca)-10,,drop=FALSE])
+pred_vec2 <- predict(VECM(tsDyn:::myHead(barry,n_ca-10), lag=3), n.ahead=1, newdata=barry[((n_ca-3):n_ca)-9,,drop=FALSE])
+all.equal(rbind(pred_vec1, pred_vec2), head(pred_vec_roll,2), check=FALSE)
+all.equal(predict(VECM(tsDyn:::myHead(barry,n_ca-10), lag=3), n.ahead=1, newdata=barry[((n_ca-3):n_ca)-1,,drop=FALSE]), tail(pred_vec_roll,1), check=FALSE)
+
+
+### VECM Refit lag=1
+pred_vec_ref<-predict_rolling(object=VECM(barry, lag=1), nroll=10, n.ahead=1, refit.every=1)
+pred_vec_ref_1 <- predict(VECM(tsDyn:::myHead(barry,n_ca-10), lag=1), n.ahead=1)
+pred_vec_ref_2 <- predict(VECM(tsDyn:::myHead(barry,n_ca-9), lag=1), n.ahead=1)
+all.equal(rbind(pred_vec_ref_1, pred_vec_ref_2), head(pred_vec_ref,2), check=FALSE)
+all.equal(predict(VECM(tsDyn:::myHead(barry,n_ca-1), lag=1), n.ahead=1), tail(pred_vec_ref,1), check=FALSE)

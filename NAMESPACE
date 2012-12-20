@@ -7,6 +7,9 @@ importFrom(tseries, na.remove)
 importFrom(Matrix, norm)
 importFrom(vars, irf)
 importFrom(vars, fevd)
+importFrom(forecast, Arima)
+importFrom(forecast, ets)
+importFrom(forecast, forecast)
 
 importClassesFrom(urca, ca.jo)
 
@@ -21,14 +24,14 @@ export(nlar, mse, MAPE, selectSETAR, selectLSTAR, selectNNET,
 	delta, delta.test, delta.lin, delta.lin.test,
 	llar, llar.predict, llar.fitted, sigmoid, dsigmoid,
 	setar, lstar, star, availableModels,
-	nlarDialog, linear, isLinear, nnetTs, aar,
+	linear, isLinear, nnetTs, aar,
 	star, addRegime, 
 	TVAR, TVECM, TVAR.sim, TVAR.boot, TVECM.sim, TVAR.LRtest, TVECM.SeoTest, TVECM.HStest,
 	lineVar, VECM, VAR.sim, VAR.boot, VECM.sim, 
 	setar.sim, setarTest,
 	MakeThSpec, BBCTest, KapShinTest, resVar, extendBoot, regime, getTh,
 	fevd, irf, VARrep, VECM_symbolic, rank.select, lags.select, rank.test,
-	predict_rolling)
+	predict_rolling, accuracy_stat)
 S3method(extend, list)
 S3method(isLinear, lstar)
 S3method(toLatex, setar)
@@ -124,9 +127,13 @@ S3method(vcov, lstar)
 S3method(confint, lstar)
 S3method(irf, nlVar)
 S3method(predict_rolling, nlVar)
+S3method(predict_rolling, nlar)
+S3method(predict_rolling, ets)
+S3method(predict_rolling, Arima)
 S3method(fevd, nlVar)
 S3method(VARrep, VECM)
 S3method(VARrep, VAR)
-
+S3method(accuracy_stat, pred_roll)
+S3method(accuracy_stat, default)
 
 useDynLib(tsDyn)

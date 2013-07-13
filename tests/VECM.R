@@ -14,6 +14,9 @@ vecm_OLS_l3_co_betaGiven<-VECM(barry, lag=3, include="const", beta=c(0.1, -0.05)
 vecm_OLS_l1_tr <-VECM(barry, lag=1, include="trend")
 vecm_OLS_l1_bo <-VECM(barry, lag=1, include="both")
 vecm_OLS_l1_no <-VECM(barry, lag=1, include="none")
+vecm_OLS_l1_coAsExo <-VECM(barry, lag=1, include="none", exogen=rep(1, nrow(barry)))
+vecm_OLS_l3_coAsExo <-VECM(barry, lag=3, include="none", exogen=rep(1, nrow(barry)))
+
 vecm_OLS_l1_LRco <-VECM(barry, lag=1, LRinclude="const")
 vecm_OLS_l1_LRtr <-VECM(barry, lag=1, LRinclude="trend")
 vecm_OLS_l1_LRtr_noCo <-VECM(barry, lag=1, LRinclude="trend", include="none")
@@ -25,25 +28,48 @@ vecm_ML_l3_co <-VECM(barry, lag=3, include="const", estim="ML")
 vecm_ML_l1_tr <-VECM(barry, lag=1, include="trend", estim="ML")
 vecm_ML_l1_bo <-VECM(barry, lag=1, include="both", estim="ML")
 vecm_ML_l1_no <-VECM(barry, lag=1, include="none", estim="ML")
+vecm_ML_l1_coAsExo <-VECM(barry, lag=1, include="none", exogen=rep(1, nrow(barry)), estim="ML")
+vecm_ML_l3_coAsExo <-VECM(barry, lag=3, include="none", exogen=rep(1, nrow(barry)), estim="ML")
+
+set.seed(1234)
+exoVar <- rnorm(n=nrow(barry))
 vecm_ML_l1_LRco <-VECM(barry, lag=1, LRinclude="const", estim="ML")
+vecm_ML_l1_LRc_exo <-VECM(barry, lag=1, LRinclude="const", estim="ML", exogen=exoVar)
 vecm_ML_l1_LRtr <-VECM(barry, lag=1, LRinclude="trend", estim="ML")
+vecm_ML_l1_LRtr_exo <-VECM(barry, lag=1, LRinclude="trend", estim="ML", exogen=exoVar)
 vecm_ML_l1_LRtr_noCo <-VECM(barry, lag=1, LRinclude="trend", include="none", estim="ML")
 vecm_ML_l1_LRbo <-VECM(barry, lag=1, LRinclude="both", estim="ML")
+vecm_ML_l1_LRbo_exo <-VECM(barry, lag=1, LRinclude="both", estim="ML", exogen=exoVar)
 
 vecm_all <- list(
-		vecm_OLS_l1_co, vecm_OLS_l3_co, vecm_OLS_l3_co_betaGiven, vecm_OLS_l1_tr, 
-		vecm_OLS_l1_bo, vecm_OLS_l1_no, vecm_OLS_l1_LRco, vecm_OLS_l1_LRtr, 
-		vecm_OLS_l1_LRtr_noCo, vecm_OLS_l1_LRbo, 
-		vecm_ML_l1_co, vecm_ML_l3_co,  vecm_ML_l1_tr, 
-		vecm_ML_l1_bo, vecm_ML_l1_no, vecm_ML_l1_LRco, vecm_ML_l1_LRtr, 
-		vecm_ML_l1_LRtr_noCo, vecm_ML_l1_LRbo)
+		vecm_OLS_l1_co=vecm_OLS_l1_co,
+		vecm_OLS_l3_co=vecm_OLS_l3_co,
+		vecm_OLS_l3_co_betaGiven=vecm_OLS_l3_co_betaGiven,
+		vecm_OLS_l1_tr=vecm_OLS_l1_tr, 
+		vecm_OLS_l1_bo=vecm_OLS_l1_bo,
+		vecm_OLS_l1_no=vecm_OLS_l1_no,
+		vecm_OLS_l1_coAsExo=vecm_OLS_l1_coAsExo,
+		vecm_OLS_l3_coAsExo=vecm_OLS_l3_coAsExo, 
+		vecm_OLS_l1_LRco=vecm_OLS_l1_LRco,
+		vecm_OLS_l1_LRtr=vecm_OLS_l1_LRtr, 
+		vecm_OLS_l1_LRtr_noCo=vecm_OLS_l1_LRtr_noCo, 
+		vecm_OLS_l1_LRbo=vecm_OLS_l1_LRbo, 
 
-names(vecm_all) <-c("vecm_OLS_l1_co", "vecm_OLS_l3_co", "vecm_OLS_l3_co_betaGiven", "vecm_OLS_l1_tr", 
-		"vecm_OLS_l1_bo", "vecm_OLS_l1_no", "vecm_OLS_l1_LRco", "vecm_OLS_l1_LRtr", 
-		"vecm_OLS_l1_LRtr_noCo", "vecm_OLS_l1_LRbo", 
-		"vecm_ML_l1_co", "vecm_ML_l3_co", " vecm_ML_l1_tr", 
-		"vecm_ML_l1_bo", "vecm_ML_l1_no", "vecm_ML_l1_LRco", "vecm_ML_l1_LRtr", 
-		"vecm_ML_l1_LRtr_noCo", "vecm_ML_l1_LRbo")
+		vecm_ML_l1_co=vecm_ML_l1_co,
+		vecm_ML_l3_co=vecm_ML_l3_co,
+		vecm_ML_l1_tr=vecm_ML_l1_tr, 
+		vecm_ML_l1_bo=vecm_ML_l1_bo,
+		vecm_ML_l1_no=vecm_ML_l1_no,
+		vecm_ML_l1_coAsExo=vecm_ML_l1_coAsExo,
+		vecm_ML_l3_coAsExo=vecm_ML_l3_coAsExo, 
+		vecm_ML_l1_LRco=vecm_ML_l1_LRco,
+		vecm_ML_l1_LRc_exo=vecm_ML_l1_LRc_exo,
+		vecm_ML_l1_LRtr=vecm_ML_l1_LRtr,
+		vecm_ML_l1_LRtr_exo=vecm_ML_l1_LRtr_exo,
+		vecm_ML_l1_LRtr_noCo=vecm_ML_l1_LRtr_noCo,
+		vecm_ML_l1_LRbo=vecm_ML_l1_LRbo,
+		vecm_ML_l1_LRbo_exo=vecm_ML_l1_LRbo_exo)
+
 
 vecm_ML <- vecm_all[grep("ML", names(vecm_all))]
 
@@ -82,18 +108,19 @@ sapply(vecm_all, function(x) x$model.specific$coint )
 sapply(vecm_all, function(x) x$model.specific$beta)
 
 ### VARrep
-lapply(vecm_all, VARrep)
+lapply(vecm_all, function(x) round(VARrep(x),9))
 
 ### fevd
 lapply(vecm_all, function(x) sapply(fevd(x, n.ahead=2), head))
 
 ### irf
-vecm_irf <- vecm_all[-grep("l1_no|bo", names(vecm_all))] ## does not work for these models
+vecm_irf <- vecm_all[-grep("l1_no|bo|exo|Exo", names(vecm_all))] ## does not work for these models
 lapply(vecm_irf, function(x) sapply(irf(x, runs=1)$irf,head,2))
 
 ## predict
-lapply(vecm_all[-c(5, 6, 9, 10, 14, 15, 18, 19)], predict,  n.ahead=2)
-lapply(vecm_all[-c(5, 6, 9, 10, 14, 15, 18, 19)], function(x) sapply(tsDyn:::predictOld.VECM(x, n.ahead=2)$fcst, function(y) y[,"fcst"]))
+vecm_all_pred <- vecm_all[-grep("_bo|_no|_noCo|LRbo|coAsExo|exo", names(vecm_all))]
+lapply(vecm_all_pred, predict,  n.ahead=2)
+lapply(vecm_all_pred, function(x) sapply(tsDyn:::predictOld.VECM(x, n.ahead=2)$fcst, function(y) y[,"fcst"]))
 
 lapply(vecm_all, function(x) predict_rolling(x,nroll=2)$pred)
 lapply(vecm_all, function(x) predict_rolling(x,nroll=2, refit.every=1)$pred)
@@ -130,6 +157,30 @@ r_sel_none$AICs
 
 r_sel_both$LLs
 r_sel_both$AICs
+
+#### exogen: check equalities
+check.same <- function(x1, x2) {
+  co_x2 <- coef(x2)
+  t1 <- isTRUE(all.equal(coef(x1), co_x2[,c(1:x2$model.specific$r, ncol(co_x2),(x2$model.specific$r+1):(ncol(co_x2)-1))], check.attributes=FALSE))
+  t2 <- isTRUE(all.equal(AIC(x1), AIC(x2), check.attributes=FALSE))
+  t3 <- isTRUE(all.equal(BIC(x1), BIC(x2), check.attributes=FALSE))
+  if(x1$model.specific$estim=="ML"){
+    t5 <- isTRUE(all.equal(BIC(x1,fitMeasure="LL"), BIC(x2,fitMeasure="LL"), check.attributes=FALSE))
+    t6 <- isTRUE(all.equal(BIC(x1,fitMeasure="LL", r=2), BIC(x2,fitMeasure="LL",r=2), check.attributes=FALSE))
+    t7 <- isTRUE(all.equal(logLik(x1,fitMeasure="LL", r=2), logLik(x2,fitMeasure="LL",r=2), check.attributes=FALSE))
+    t8 <- isTRUE(all.equal(rank.test(x1)$res_df[,c("trace", "eigen")], rank.test(x2)$res_df[,c("trace", "eigen")], check.attributes=FALSE))
+  } else {
+    t5 <- t6 <- t7 <- t8 <-  NULL
+  }
+  t4 <- isTRUE(all.equal(residuals(x1), residuals(x2), check.attributes=FALSE))
+  c(t1, t1, t3,t4, t5, t6, t7, t8)
+}
+
+check.same(x1=vecm_OLS_l1_co, x2=vecm_OLS_l1_coAsExo)
+check.same(x1=vecm_OLS_l3_co, x2=vecm_OLS_l3_coAsExo)
+check.same(x1=vecm_ML_l1_co, x2=vecm_ML_l1_coAsExo)
+check.same(x1=vecm_ML_l3_co, x2=vecm_ML_l3_coAsExo)
+
 
 
 ###################################

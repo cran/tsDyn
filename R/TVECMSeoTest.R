@@ -1,3 +1,59 @@
+#'No cointegration vs threshold cointegration test
+#'
+#'Test the null of no cointegration against threshold cointegration with
+#'bootstrap distribution of Seo (2006)
+#'
+#'For this test, the cointegrating value has to be specified by the user.
+#'
+#'The model used is one where the threshold effect concerns only the
+#'cointegrating vector, and only in the outer regimes.
+#'
+#'Due to the presence of parameters unidentified under the null hypothesis, the
+#'test employed is a Sup-Wald test, that means that for each combination of the
+#'thresholds, a Wald Test is computed and the supremum of all tests is taken.
+#'For each bootstrap replication, this approach is taken, so that the test is
+#'really slow.
+#'
+#'@param data time series
+#'@param lag Number of lags to include in each regime
+#'@param beta Pre-specified cointegarting value
+#'@param trim trimming parameter indicating the minimal percentage of
+#'observations in each regime
+#'@param nboot Number of bootstrap replications
+#'@param plot Whether a grid with the SSR of each threshold should be printed
+#'@param hpc Possibility to run the bootstrap on parallel core. See details in
+#'\code{\link{TVECM.HStest}}
+#'@param check Possibility to check the function by no sampling: the test value
+#'should be the same as in the original data
+#'@return A list cointaining diverse informations:
+#'
+#'Estimated threshold parameters and usual slope parameters.
+#'
+#'Value of the test.
+#'
+#'Critical and Pvalue from bootstrap distribution.
+#'@author Matthieu Stigler
+#'@seealso \code{\link{TVECM}} for estimating a TVECM, \code{\link{TVECM.sim}}
+#'for simulating/bootstrap a TVECM,
+#'@references Seo, Myunghwan, 2006. "Bootstrap testing for the null of no
+#'cointegration in a threshold vector error correction model," Journal of
+#'Econometrics, vol. 127(1), pages 129-150, September.
+#'@keywords ts
+#'@examples
+#'
+#'# As the function takes long long time to be executed, we show in in don't run environement
+#'\dontrun{
+#' data(zeroyld)
+#'
+#' #can be useful to check whether the bootstrap is working: 
+#' #without sampling, results of boot should be same as original
+#' #this is indeed not always the case duye to floating point algorithm
+#' TVECM.SeoTest(zeroyld,lag=2, beta=1, trim=0.1,nboot=2, plot=FALSE,check=TRUE)
+#'
+#' #then run the function:
+#' TVECM.SeoTest(zeroyld,lag=2, beta=1, trim=0.1,nboot=100, plot=FALSE,check=FALSE)
+#' }
+#'
 TVECM.SeoTest<-function(data,lag, beta, trim=0.1,nboot, plot=FALSE, hpc=c("none", "foreach"), check=FALSE) {
 
 hpc<-match.arg(hpc)
@@ -81,9 +137,13 @@ for(i in 1:length(gammas)){
 	for (j in 1:length(gammas)){
 		if(j>i+ninter){		
 			gam2<-gammas[j]
-			res<-loop(gam1=gam1,gam2=gam2,ECT=ECT, DeltaX=DeltaX,Y=Y,M=M)
-			store[i,j]<-res$Wald
-			store2[i,j]<-res$detSigma
+			res<-try(loop(gam1=gam1,gam2=gam2,ECT=ECT, DeltaX=DeltaX,Y=Y,M=M), silent=TRUE)
+			if(inherits(res, "try-error")) {
+			  store[i,j]<- store2[i,j] <- NA
+			} else {
+			  store[i,j]<-res$Wald
+			  store2[i,j]<-res$detSigma
+			}
 		} #End if
 	}	#End for j
 
@@ -177,13 +237,13 @@ storeb<-matrix(0, nrow=ng,ncol=ng)
     for (j in 1:length(gammasb)){
       if(j>i+ninter){		
         gam2<-gammasb[j]
-        res<-loop(gam1,gam2,ECT=ECTboot, DeltaX=DeltaXboot,Y=DeltaYboot,M=Mboot)
-        storeb[i,j]<-res$Wald
+        res<-try(loop(gam1,gam2,ECT=ECTboot, DeltaX=DeltaXboot,Y=DeltaYboot,M=Mboot), silent=TRUE)
+	storeb[i,j] <- if(inherits(res, "try-error")) NA else res$Wald
       } #End if
     }	#End for j
   }		#end for i
 
-supWaldboot<-max(storeb)
+supWaldboot<-max(storeb, na.rm=TRUE)
 return(supWaldboot)
 }#end of the bootstrap loop
 
@@ -241,9 +301,15 @@ plot.TVECMSeo06Test<-function(x,...){
 
 if(FALSE) {#usage example
 
-data(zeroyld)
+#data(zeroyld)
 data<-zeroyld
 
 
-TVECM.SeoTest(data[1:100,],lag=1, beta=1.1, trim=0.15, nboot=1, plot=FALSE, check=TRUE)
+tv_test <- TVECM.SeoTest(data[1:100,],lag=1, beta=1.1, trim=0.15, nboot=1, plot=FALSE, check=TRUE)
+print(tv_test)
+summary(tv_test)
+
+tv_test2 <- TVECM.SeoTest(data[1:100,],lag=1, beta=1.1, trim=0.15, nboot=5, plot=FALSE, check=FALSE)
+print(tv_test2)
+summary(tv_test2)
 }

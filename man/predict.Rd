@@ -15,7 +15,9 @@
 }
 
 \usage{
-\method{predict}{nlar}(object, newdata, n.ahead=1, type=c("naive", "MC", "bootstrap", "block-bootstrap"), nboot=100, ci=0.95, block.size=3, boot1Zero=TRUE,...)	
+\method{predict}{nlar}(object, newdata, n.ahead=1, 
+      type=c("naive", "MC", "bootstrap", "block-bootstrap"), 
+      nboot=100, ci=0.95, block.size=3, boot1Zero=TRUE,...)	
 \method{predict}{VAR}(object, newdata, n.ahead=5, ...)	
 \method{predict}{VECM}(object, newdata, n.ahead=5, ...)	
 }
@@ -88,14 +90,16 @@ lines(pred_setar_boot$pred, lty=3, col=3)
 lines(pred_setar_Bboot$pred, lty=4, col=4)
 lines(pred_setar_MC$pred, lty=5, col=5)
 
-legend("bottomleft", leg=c("Observed", "Naive F", "Bootstrap F","Block-Bootstrap F", "MC F"), lty=1:5, col=1:5)
+legLabels <- c("Observed", "Naive F", "Bootstrap F","Block-Bootstrap F", "MC F")
+legend("bottomleft", leg=legLabels, lty=1:5, col=1:5)
 
 ## Multivariate:
 data(barry)
 mod_vecm <- VECM(barry, lag=2)
 predict(mod_vecm)
 
-# note that when providing newdata, newdata has to be ordered chronologically, so that the first row/element is the earliest value:
+# note that when providing newdata, newdata has to be ordered chronologically, 
+# so that the first row/element is the earliest value:
 all.equal(predict(mod_vecm), predict(mod_vecm, newdata=barry[c(322, 323, 324),]))
 
 }

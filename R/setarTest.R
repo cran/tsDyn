@@ -1,5 +1,3 @@
-
-
 ###tests
 #SSR of linear
  # check for stationarty
@@ -20,6 +18,7 @@
 #SSR of those models: SSR_1thresh / SSR_2threshCommon / SSR_2threshNoCommon
 
 #replicate()
+
 
 
 setarTest <- function (x, m, d = 1, steps = d, series, thDelay = 0, nboot=10, trim=0.1, test=c("1vs", "2vs3"), hpc=c("none", "foreach"), check=FALSE)
@@ -242,6 +241,8 @@ plot.Hansen99Test<-function(x,show.extended=TRUE, ...){
     legend("topright", legend=leg, col=col, lty=c(1,1,2), bg="white")
   }
 }
+
+
 
 
 extendBoot<-function(x, nboot){

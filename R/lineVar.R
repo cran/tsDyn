@@ -58,7 +58,7 @@
 #'if(require(vars)) {
 #'	a<-VAR(data, p=1)
 #'	coef_vars <- t(sapply(coef(a), function(x) x[c(3,1,2),1]))
-#'	all.equal(coef(VAR),coef_vars, check=FALSE)
+#'	all.equal(coef(VAR),coef_vars, check.attributes=FALSE)
 #'}
 #'
 #'###VECM
@@ -172,13 +172,13 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 	      "both"  = cbind(rep(1,t),seq_len(t), Z))
 
   if(!is.null(exogen)){
+    if(is.data.frame(exogen)) exogen <- as.matrix(exogen)
     n_exo <- NROW(exogen)
     if(n_exo!=nrow(Z)){
       if(n_exo!=T)  warning("exogen is of size ", n_exo, "while full/end-sample size is of size", T,"/", nrow(Z), "series shortened")
       exogen <- myTail(exogen, nrow(Z))
     }
     Z <- cbind(Z, exogen)
-
   }
 
 

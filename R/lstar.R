@@ -1,3 +1,5 @@
+
+#' @export
 ## Copyright (C) 2005, 2006, 2007/2006  Antonio, Fabio Di Narzo
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -92,10 +94,22 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
   #c: threshold value
   #Model covariates are 'xxL', 'xxH' and 'x', as defined in the
   #   beginning of that function
-  F <- function(phi1, phi2, g, th){
-    xxL %*% phi1 + (xxH %*% phi2) * G(z, g, th)
+  F <- function(phi1, phi2, g, th, type=1){
+    if(type==1){
+      xxL %*% phi1 + (xxH %*% phi2) * G(z, g, th)
+    } else {
+      (xxL %*% phi1)* (1-G(z, g, th)) + (xxH %*% phi2) * G(z, g, th)
+    }
   }
 
+  F_bind <- function(xxL, xxH, g, th, type=1){
+    if(type==1){
+      cbind(xxL , xxH * G(z, g, th))
+    } else {
+      cbind(xxL * (1- G(z, g, th)), xxH * G(z, g, th))
+    }
+    
+  }
 #Automatic starting values####################
   if(missing(th) || missing(gamma)) {
     if (trace)
@@ -137,7 +151,7 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     for(i in 1:nrow(IDS)){
 
       # We fix the linear parameters.
-      cost <- crossprod(lm.fit(cbind(xxL, xxH * G(z, IDS[i,1], IDS[i,2])), yy)$residuals)
+      cost <- crossprod(lm.fit(F_bind(xxL, xxH, g=IDS[i,1], th=IDS[i,2]), yy)$residuals)
 
       if(cost <= bestCost) {
 	bestCost <- cost;
@@ -196,7 +210,7 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     pen <- if(min(m_trans, 1-m_trans, na.rm=TRUE)< 0.05) 1/(0.05-m_trans) else 0
 
     # First fix the linear parameters
-    xx <- cbind(xxL, xxH * trans)
+    xx <- F_bind(xxL, xxH, g=gamma, th=th)
     if(any(is.na(as.vector(xx)))) {
       message('lstar: missing value during computations')
       return (Inf)
@@ -218,17 +232,19 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
       cat("Optimization algorithm converged\n")
     }
   }
-  phi_2<- lm.fit(cbind(xxL, xxH * G(z, res$par[1], res$par[2])), yy)$coefficients
-  coefnames<-c(if(ninc>0) paste(incNames,"1",sep=""), paste("phi1", 1:mL, sep="."),
-                               if(ninc>0) paste(incNames,"2",sep=""), paste("phi2", 1:mH, sep="."))
+  phi_2<- lm.fit(F_bind(xxL, xxH, g=res$par[1],th= res$par[2]), yy)$coefficients
+  coefnames_L <- c(if(ninc>0) paste(incNames,"L",sep="."), paste("phiL", 1:mL, sep="."))
+  coefnames_H <- c(if(ninc>0) paste(incNames,"H",sep="."), paste("phiH", 1:mH, sep="."))
+  coefnames <- c(coefnames_L, coefnames_H)
+
   names(phi_2) <-coefnames
   names(res$par) <- c("gamma", "th")
 
   ## Optimization: second quick step to get hessian for all parameters ########
   SS_2 <- function(p) {
-    phi1 <- p[grep("const1|phi1|trend1",names(p))]	#Extract parms from vector p
-    phi2 <- p[grep("const2|phi2|trend2",names(p))]	#Extract parms from vector p
-    y.hat <-(xxL %*% phi1) + (xxH %*% phi2) * G(z, p["gamma"], p["th"])
+    phi1 <- p[coefnames_L]	#Extract parms from vector p
+    phi2 <- p[coefnames_H]	#Extract parms from vector p
+    y.hat <- F(phi1, phi2, g=p["gamma"], th=p["th"])
     crossprod(yy - y.hat)
   }
   res$par <- c(phi_2,res$par)
@@ -263,13 +279,17 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
     res$mTh <- mTh
   }
   res$thVar <- c(rep(NA, length(x)-length(z)),z)
-  res$fitted <- F(coefs[grep("phi1|const1|trend1", names(coefs))], coefs[grep("phi2|const2|trend2", names(coefs))], gamma, th)
+  res$fitted <- F(coefs[coefnames_L], 
+                  coefs[coefnames_H], gamma, th, type=1)
   res$residuals <- yy - res$fitted
   dim(res$residuals) <- NULL	#this should be a vector, not a matrix
   res$k <- length(res$coefficients)
   res$ninc<-ninc
   res$include<-include
   res$timeAttributes <- attributes(x)
+
+  mod.return <- data.frame(yy,F_bind(xxL, xxH, g=gamma, th=th))
+  colnames(mod.return) <- c("yy", coefnames)
 
 ################################
 
@@ -278,7 +298,7 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
                      fitted.values =res$fitted,
                      residuals =res$residuals,
                      k   =res$k,
-		     model = data.frame(yy,xxL, xxH * G(z, gamma, th)),
+		     model = mod.return,
                      model.specific=res),
                 "lstar"))
 }
@@ -288,7 +308,7 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
 #############################################
   #Transition function G: moved to star.R
 
-  
+#' @S3method print lstar
 print.lstar <- function(x, ...) {
   NextMethod(...)
   cat("\nLSTAR model\n")
@@ -296,8 +316,8 @@ print.lstar <- function(x, ...) {
   ninc<-x$ninc
   order.L <- x$mL
   order.H <- x$mH
-  lowCoef <- x$coef[grep("phi1|const1|trend1", names(x$coef))]
-  highCoef <- x$coef[grep("phi2|const2|trend2", names(x$coef))]
+  lowCoef <- x$coef[grep("phiL|const\\.L|trend\\.L", names(x$coef))]
+  highCoef <- x$coef[grep("phiH|const\\.H|trend\\.H", names(x$coef))]
   gammaCoef <- x$coef["gamma"]
   thCoef <- x$coef["th"]
   externThVar <- x$externThVar
@@ -325,6 +345,7 @@ print.lstar <- function(x, ...) {
   invisible(x)
 }
 
+#' @S3method summary lstar
 summary.lstar <- function(object, ...) {
   ans <- list()  
 
@@ -367,6 +388,7 @@ summary.lstar <- function(object, ...) {
   return(extend(summary.nlar(object), "summary.lstar", listV=ans))
 }
 
+#' @S3method print summary.lstar
 print.summary.lstar <- function(x, digits=max(3, getOption("digits") - 2),
                        signif.stars = getOption("show.signif.stars"), ...)
 {
@@ -391,6 +413,7 @@ print.summary.lstar <- function(x, digits=max(3, getOption("digits") - 2),
   invisible(x)
 }
 
+#' @S3method plot lstar
 plot.lstar <- function(x, ask=interactive(), legend=FALSE,
                        regSwStart, regSwStop, ...) {
   
@@ -453,6 +476,15 @@ plot.lstar <- function(x, ask=interactive(), legend=FALSE,
   invisible(x)
 }
 
+#' @S3method coef lstar
+#Coef() method: hyperCoef=FALSE won't show the threshold/slope coef
+coef.lstar <- function(object, hyperCoef=TRUE, ...){
+  co <- object$coefficients
+  if(!hyperCoef) co <- head(co, -2)
+  co
+}
+
+#' @S3method vcov lstar
 vcov.lstar <- function(object, ...){
   n <- object$str$n.used
   coef<- object$coefficients
@@ -470,6 +502,7 @@ vcov.lstar <- function(object, ...){
 return(vc)
 }
 
+#' @S3method confint lstar
 confint.lstar <- function(object, parm, level = 0.95, ...){
   confint.default(object, parm=parm, level=level, ...)
 }
@@ -481,8 +514,8 @@ oneStep.lstar <- function(object, newdata, itime, thVar, ...){
   mL <- object$model.specific$mL
   mH <- object$model.specific$mH
   coefs<-object$coefficients
-  phi1 <- coefs[grep("const1|trend1|phi1", names(coefs))]
-  phi2 <- coefs[grep("const2|trend2|phi2", names(coefs))]
+  phi1 <- coefs[grep("const\\.L|trend\\.L|phiL", names(coefs))]
+  phi2 <- coefs[grep("const\\.H|trend\\.H|phiH", names(coefs))]
   gamma <- coefs["gamma"]
   c <- coefs["th"]
   ext <- object$model.specific$externThVar

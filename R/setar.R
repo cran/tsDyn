@@ -1,3 +1,5 @@
+
+#' @export
 ## Copyright (C) 2005,2006,2009  Antonio, Fabio Di Narzo
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -304,6 +306,7 @@ z<-as.matrix(z)
   }
   
   names(res$coefficients) <- na.omit(co)
+  colnames(xxLH) <- head(na.omit(co), -nthresh)
 
 ###check for unit roots
   if(type=="level"){
@@ -357,13 +360,15 @@ z<-as.matrix(z)
 }
 
 getSetarXRegimeCoefs <- function(x, regime=c("L","M","H")) {
-  regime <- match.arg(regime)
-  x <- x$coef
-  x1 <- x[grep(paste("phi", regime, "\\.", sep=""), names(x))]
-  x2 <- x[grep(paste("^const ", regime, "$", sep=""), names(x))]
-  x3 <- x[grep(paste("^trend ", regime, "$", sep=""), names(x))]
-  return(c(x1, x2, x3))
+  reg <- match.arg(regime)
+  
+  #generate vector of "^phiL|^const.L|^trend.L"
+  nam1 <- paste(c("^phi", "^const.", "^trend."), reg, sep="")
+  nam2 <- paste(nam1, collapse="|")
+  # select that vector into coefficients
+  x$coef[grep(nam2, names(x$coef))]
 }
+
 
 
 #gets a vector with names of the arg inc
@@ -371,7 +376,7 @@ getIncNames<-function(inc,ML){
   ninc<-length(inc)
   letter<-deparse(substitute(ML))
   letter<-sub("M","",letter)
-  paste(inc, rep(letter,ninc))
+  paste(inc, rep(letter,ninc), sep=".")
 }
 
 #get a vector with names of the coefficients
@@ -387,6 +392,7 @@ getArNames<-function(ML, type=c("level", "diff", "ADF")){
   }
 }
 
+#' @S3method print setar
 print.setar <- function(x, ...) {
   NextMethod(...)
   x.old <- x
@@ -445,6 +451,7 @@ print.setar <- function(x, ...) {
   invisible(x)
 }
 
+#' @S3method summary setar
 summary.setar <- function(object, ...) {
   ans <- list()
   mod <- object$model.specific
@@ -461,7 +468,7 @@ summary.setar <- function(object, ...) {
   ans$externThVar <- mod$externThVar
   ans$lowRegProp <- mod$lowRegProp
   n <- getNUsed(object$str)
-  coef <- object$coef[seq_len(length(object$coef)-nthresh)] #all coeffients except of the threshold
+  coef <- coef(object, hyperCoef=FALSE) #all coeffients except of the threshold
   p <- length(coef)			#Number of slope coefficients
   resvar <- mse(object) * n / (n-p)
   Qr <- mod$qr
@@ -477,6 +484,7 @@ summary.setar <- function(object, ...) {
   extend(summary.nlar(object), "summary.setar", listV=ans)
 }
 
+#' @S3method print summary.setar
 print.summary.setar <- function(x, digits=max(3, getOption("digits") - 2),
 	signif.stars = getOption("show.signif.stars"), ...) {
 	NextMethod(digits=digits, signif.stars=signif.stars, ...)
@@ -501,6 +509,44 @@ print.summary.setar <- function(x, digits=max(3, getOption("digits") - 2),
 	invisible(x)
 }
 
+#' @S3method coef setar
+#Coef() method: hyperCoef=FALSE won't show the threshold coef
+coef.setar <- function(object, hyperCoef=TRUE, ...){
+  co <- object$coefficients
+  if(!hyperCoef) co <- head(co, -length(getTh(object)))
+  co
+}
+
+#' @S3method vcov setar
+vcov.setar <- function(object,hyperCoef=TRUE, ...){
+  mod <- object$model.specific
+  
+  nthresh<-mod$nthresh
+  n <- length(object$str$x)
+  coef <- coef(object, hyperCoef=FALSE) #all coeffients except of the threshold
+  p <- length(coef)    	#Number of slope coefficients
+  
+  # residual variance
+  resvar <- mse(object) * n / (n-p)
+  
+  # (X'X)^(-1)
+  Qr <- mod$qr
+  p1 <- 1:p
+  est <- coef[Qr$pivot[p1]]
+  R <- chol2inv(Qr$qr[p1, p1, drop = FALSE]) #compute (X'X)^(-1) from the (R part) of the QR decomposition of X.
+  
+  ## result
+  res <- R*resvar
+  
+  if(hyperCoef){
+    res <- cbind(rbind(res,0),0)
+    if(mod$nthresh==2) res <- cbind(rbind(res,0),0)
+  }
+  
+  return(res)
+}
+
+#' @S3method plot setar
 plot.setar <- function(x, ask=interactive(), legend=FALSE, regSwStart, regSwStop, ...) {
   op <- par(no.readonly=TRUE)
   on.exit(par(op))

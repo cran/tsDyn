@@ -32,7 +32,7 @@ buildXth1NoCommon <- function(gam1, thDelay, xx,trans, ML, MH,const, trim, temp=
       ML<-seq_len(ML)
       MH<-seq_len(MH)
     }
-        isL <- ifelse(trans[, thDelay + 1]<= gam1,1,0)	### isL: dummy variable
+  isL <- ifelse(trans[, thDelay + 1]<= gam1,1,0)	### isL: dummy variable
 	xxL <- cbind(const,xx[,ML])*isL
 	xxH <- cbind(const,xx[,MH])*(1-isL)
 	xxLH<-cbind(xxL,xxH)
@@ -50,27 +50,26 @@ buildXth1NoCommon <- function(gam1, thDelay, xx,trans, ML, MH,const, trim, temp=
 ###Build the xx matrix with 2 thresh and common=TRUE
 buildXth2Common<-function(gam1,gam2,thDelay,xx,trans, ML, MH,MM, const,trim, temp=FALSE){
   if(temp){
-      ML<-seq_len(ML)
-      MH<-seq_len(MH)
-    }
+    ML<-seq_len(ML)
+    MH<-seq_len(MH)
+  }
 	trans<-as.matrix(trans)
 
 	##Threshold dummies
 	dummydown <- ifelse(trans[, thDelay + 1]<=gam1, 1, 0)
-# print(dummydown)
 	ndown <- mean(dummydown)
 	dummyup <- ifelse(trans[, thDelay + 1]>gam2, 1, 0)
-# print(dummyup)
 	nup <- mean(dummyup)
+  
 	##Construction of the matrix
-#  print(c(gam1, gam2,ndown, (1-ndown-nup),nup))
 	xxLMH<-cbind(const,xx[,ML]*dummydown,xx[,MM]*(1-dummydown-dummyup),xx[,MH]*(dummyup))
-##return result
+
+  ##return result
 	if(min(nup, ndown, 1-nup-ndown)>=trim){
 		res <- xxLMH	#SSR
+	}	else{
+	  res <- NA 
 	}
-	else
-		res <- NA
 
 	return(res)
 }
@@ -85,8 +84,8 @@ buildXth2LagsIncCommon<-function(gam1,gam2,thDelay,xx,trans, ML, MH,MM, const,tr
 	##Threshold dummies
 	dummydown <- ifelse(trans[, thDelay + 1]<=gam1, 1, 0)
 	dummyup <- ifelse(trans[, thDelay + 1]>gam2, 1, 0)
+  
 	##Construction of the matrix
-
 	xxLMH<-cbind(const,xx[,1]*dummydown,xx[,1]*(1-dummydown-dummyup),xx[,1]*(dummyup), xx[,-1])
 	return(xxLMH)
 }
@@ -94,16 +93,16 @@ buildXth2LagsIncCommon<-function(gam1,gam2,thDelay,xx,trans, ML, MH,MM, const,tr
 
 buildXth2LagsCommon<-function(gam1,gam2,thDelay,xx,trans, ML, MH,MM, const,trim, temp=FALSE){
   if(temp){
-      ML<-seq_len(ML)
-      MH<-seq_len(MH)
-    }
+    ML<-seq_len(ML)
+    MH<-seq_len(MH)
+  }
 	trans<-as.matrix(trans)
 
 	##Threshold dummies
 	dummydown <- ifelse(trans[, thDelay + 1]<=gam1, 1, 0)
 	dummyup <- ifelse(trans[, thDelay + 1]>gam2, 1, 0)
-	##Construction of the matrix
-
+	
+  ##Construction of the matrix
 	xxLMH<-cbind(const*dummydown,xx[,1]*dummydown,const*(1-dummydown-dummyup), xx[,1]*(1-dummydown-dummyup),const*dummyup, xx[,1]*(dummyup), xx[,-1])
 	return(xxLMH)
 }
@@ -112,18 +111,17 @@ buildXth2LagsCommon<-function(gam1,gam2,thDelay,xx,trans, ML, MH,MM, const,trim,
 ###Build the xx matrix with 2 thresh and common=FALSE
 buildXth2NoCommon<-function(gam1,gam2,thDelay,xx,trans, ML, MH,MM, const,trim, temp=FALSE){
   if(temp){
-      ML<-seq_len(ML)
-      MH<-seq_len(MH)
-    }
-	##Threshold dummies
+    ML<-seq_len(ML)
+    MH<-seq_len(MH)
+  }
+	
+  ##Threshold dummies
 	dummydown <- ifelse(trans[, thDelay + 1]<=gam1, 1, 0)
-# print(dummydown)
 	ndown <- mean(dummydown)
 	dummyup <- ifelse(trans[, thDelay + 1]>gam2, 1, 0)
-# print(dummyup)
 	nup <- mean(dummyup)
+  
 	##Construction of the matrix
-#  print(c(gam1, gam2,ndown, (1-ndown-nup),nup))
 	xxL <- cbind(const,xx[,ML])*dummydown
 	xxM<-cbind(const, xx[,MM])*(1-dummydown-dummyup)
 	xxH <- cbind(const,xx[,MH])*(dummyup)
@@ -132,8 +130,7 @@ buildXth2NoCommon<-function(gam1,gam2,thDelay,xx,trans, ML, MH,MM, const,trim, t
 	##return result
 	if(min(nup, ndown, 1-nup-ndown)>=trim-0.01){
 		res <- xxLMH	#SSR
-	}
-	else{
+	}	else {
 		cat("\nTrim not respected: ", c( ndown,1-nup-ndown, nup), "from", c(gam1, gam2))
 		res <- xxLMH
 	}
@@ -141,29 +138,29 @@ buildXth2NoCommon<-function(gam1,gam2,thDelay,xx,trans, ML, MH,MM, const,trim, t
 }
 
 
+
+### Wrapper to just get  the SSR :
+
+getSSR <- function(X,y){
+  base::crossprod(lm.fit(X,y)$residuals) ## specify base if Matrix loaded
+}
+
+### Functions to assemble and return the SSR :
 SSR_1thresh<- function(gam1,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH,const=const,trim, fun=buildXth1Common){
 	XX<-fun(gam1,thDelay, xx,trans=trans, ML=ML, MH=MH,const, trim)
 	if(any(is.na(XX))){
-		res<-NA}
-	else{
-		res <- crossprod(yy- XX %*%chol2inv(chol(crossprod(XX)))%*%crossprod(XX,yy))	#SSRres <- NA
-		#res2<-deviance(lm(yy~XX-1))
-		#check if equal print(c(res,res2))
+		res<-NA
+	}	else {
+		res <- getSSR(XX,yy)
 	}
 	return(res)
 }
 
-SSR<-function(X,y){
-	res<-crossprod(y- X %*%chol2inv(chol(crossprod(X)))%*%crossprod(X,y))
-	#res2<-deviance(lm(y~X-1))
-	return(res)
-	}
-
 AIC.matrices<-function(X,y, T, k=2){
-	SSR<-crossprod(y- X %*%chol2inv(chol(crossprod(X)))%*%crossprod(X,y))
+	SSR <- getSSR(X,y)
 	res<-T*log(SSR/T)+k*(ncol(X)+2)
 	return(res)
-	}
+}
 
 
 
@@ -171,11 +168,9 @@ AIC.matrices<-function(X,y, T, k=2){
 SSR_2threshCommon<- function(gam1,gam2,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim){
 	XX<-buildXth2Common(gam1,gam2,thDelay,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim)
 	if(any(is.na(XX))){
-		res<-NA}
-	else{
-		res <- crossprod(yy- XX %*%chol2inv(chol(crossprod(XX)))%*%crossprod(XX,yy))	#SSRres <- NA
-		#res2<-deviance(lm(yy~XX-1))
-		#print(c(res,res2))
+		res<-NA
+	}	else {
+		res <- getSSR(XX,yy)
 	}
 	return(res)
 }
@@ -187,11 +182,9 @@ SSR_2threshCommon<- function(gam1,gam2,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, 
 SSR_2threshNoCommon<- function(gam1,gam2,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim){
   	XX<-buildXth2NoCommon(gam1,gam2,thDelay,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim)
 	if(any(is.na(XX))){
-		res<-NA}
-	else{
-		res <- crossprod(yy- XX %*%chol2inv(chol(crossprod(XX)))%*%crossprod(XX,yy))	#SSRres <- NA
-		#res2<-deviance(lm(yy~XX-1))
-		#print(c(res,res2))
+		res<-NA
+	}	else{
+		res <- getSSR(XX, yy)
 	}
 	return(res)
 }
@@ -199,11 +192,10 @@ SSR_2threshNoCommon<- function(gam1,gam2,thDelay, yy=yy,xx=xx,trans=trans, ML=ML
 AIC_1thresh<-function(gam1,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH,const=const,trim=trim,fun=buildXth1Common , k=2, T, temp=FALSE){
 	XX<-fun(gam1,thDelay, xx,trans=trans, ML=ML, MH=MH, const, trim=trim, temp=temp)
 	if(any(is.na(XX))){
-		res<-NA}
-	else{
-		SSR <- crossprod(yy- XX %*%chol2inv(chol(crossprod(XX)))%*%crossprod(XX,yy))	
+		res<-NA
+	}	else{
+		SSR <- getSSR(XX,yy)
 		res<-T*log(SSR/T)+k*(ncol(XX)+1)
-		#res2<-AIC(lm(yy~XX-1))}
 	}
 	return(res)
 }
@@ -211,12 +203,10 @@ AIC_1thresh<-function(gam1,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH,const=
 AIC_2threshCommon<- function(gam1,gam2,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim, fun=buildXth2Common, k=2, T, temp=FALSE){
 	XX<-fun(gam1,gam2,thDelay,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim, temp=temp)
 	if(any(is.na(XX))){
-		res<-NA}
-	else{
-		SSR <- crossprod(yy- XX %*%chol2inv(chol(crossprod(XX)))%*%crossprod(XX,yy))	
+		res<-NA
+	}	else {
+		SSR <- getSSR(XX,yy)
 		res<-T*log(SSR/T)+k*(ncol(XX)+2)
-		#res2<-AIC(lm(yy~XX-1))
-		#print(c(res,res2))
 	}
 	return(res)
 }
@@ -224,16 +214,10 @@ AIC_2threshCommon<- function(gam1,gam2,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, 
 AIC_2th <-function(gam1,gam2,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim, fun=buildXth2Common, k=2, T, temp=FALSE){
 	XX<-fun(gam1,gam2,thDelay,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim, temp=temp)
 	if(any(is.na(XX))){
-		res<-NA}
-	else{
-		SSR <- crossprod(yy- XX %*%chol2inv(chol(crossprod(XX)))%*%crossprod(XX,yy))	
+		res<-NA
+	}	else {
+		SSR <- getSSR(XX,yy)
 		res<-T*log(SSR/T)+k*(ncol(XX)+2)
-		print(SSR)
-		print(T)
-		print(k)
-		print(ncol(XX))
-		#res2<-AIC(lm(yy~XX-1))
-		#print(c(res,res2))
 	}
 	return(res)
 }
@@ -241,11 +225,9 @@ AIC_2th <-function(gam1,gam2,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH, MM=
 SSR_2th<- function(gam1,gam2,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim, fun=buildXth2NoCommon){
   	XX<-fun(gam1,gam2,thDelay,xx=xx,trans=trans, ML=ML, MH=MH, MM=MM,const=const,trim=trim)
 	if(any(is.na(XX))){
-		res<-NA}
-	else{
-		res <- crossprod(yy- XX %*%chol2inv(chol(crossprod(XX)))%*%crossprod(XX,yy))	#SSRres <- NA
-		#res2<-deviance(lm(yy~XX-1))
-		#print(c(res,res2))
+		res<-NA
+	}	else {
+		res <- getSSR(XX,yy)
 	}
 	return(res)
 }
@@ -261,14 +243,14 @@ buildConstants<-function(include=c("const", "trend","none", "both"), n){
   include<-match.arg(include)
   if(include=="const"){
 	  const <- rep(1,n)
-	  incNames<-"const"}
-  else if(include=="trend"){
+	  incNames<-"const"
+  } else if(include=="trend"){
 	  const<-seq_len(n)
-	  incNames<-"trend"}
-  else if(include=="both"){
+	  incNames<-"trend"
+  }  else if(include=="both"){
 	  const<-cbind(rep(1,n),seq_len(n))
-	  incNames<-c("const","trend")} 
-  else {
+	  incNames<-c("const","trend")
+  } else {
 	  const<-NULL
 	  incNames<-NULL
   }
@@ -307,6 +289,7 @@ buildConstants<-function(include=c("const", "trend","none", "both"), n){
 #'(only one of exact/int/around should be given).
 #'@author Matthieu Stigler
 #'@seealso \code{\link{selectSETAR}}
+#'@export
 #'@examples
 #'
 #'sun<-(sqrt(sunspot.year+1)-1)*2		

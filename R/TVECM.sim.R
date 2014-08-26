@@ -1,11 +1,58 @@
 
+#' @export
 #' @rdname TVECM.sim
-VECM.sim <- function(data,B,VECMobject,  beta, n=200, lag=1, type=c("simul","boot", "check"),  include = c("const", "trend","none", "both"), starting=NULL, innov=rmnorm(n, mean=0, varcov=varcov), varcov=diag(1,k), show.parMat=FALSE){
+VECM.sim <- function(data,B,VECMobject,  beta, n=200, lag=1, type=c("simul","boot", "check"),  include = c("const", "trend","none", "both"), starting=NULL, innov=rmnorm(n, mean=0, varcov=varcov), varcov=diag(1,k), show.parMat=FALSE, seed){
   k<- if(!missing(VECMobject)) VECMobject$k else if(!missing(B)) nrow(B) else if(!missing(data)) ncol(data)
-  TVECM.sim(data=data,B=B,TVECMobject=VECMobject, nthresh=0,  beta=beta, n=n, lag=lag, type=type,  include = include, starting=starting, innov=innov, varcov=varcov, show.parMat=show.parMat)
+  TVECM.sim(data=data,B=B,TVECMobject=VECMobject, nthresh=0,  beta=beta, n=n, lag=lag, type=type,  include = include, starting=starting, innov=innov, varcov=varcov, show.parMat=show.parMat, seed=seed)
 }
 
+#' @export
+#' @rdname TVECM.sim
+#' @param check When performing a bootstrap replication, check if taking original residuals (instead of resampled) 
+#' leads to the original data. 
+VECM.boot <- function(VECMobject, show.parMat=FALSE,  seed, check=TRUE){
+  if(VECMobject$num_exogen!=0) stop("VECM.boot() does not work for VECM() with exogen variables")
+  if(check){
+    ch <- TVECM.sim(TVECMobject=VECMobject,  type="check")
+    if(!isTRUE(all.equal(as.matrix(ch), as.matrix(VECMobject$model[,1:VECMobject$k]), check.attributes=FALSE)))
+      warning("Pseudo Bootstrap was not able to replicate original data, there might be an issue")
+  }
+  TVECM.sim(TVECMobject=VECMobject,  type="boot", show.parMat=show.parMat, seed=seed)
+}
 
+#' @export
+#' @rdname TVECM.sim
+TVECM.boot <- function(TVECMobject, show.parMat=FALSE,  seed, check=TRUE){
+  if(check){
+    ch <- TVECM.sim(TVECMobject=TVECMobject,  type="check")
+    if(!isTRUE(all.equal(as.matrix(ch), as.matrix(TVECMobject$model[,1:TVECMobject$k]), check.attributes=FALSE)))
+      warning("Pseudo Bootstrap was not able to replicate original data, there might be an issue")
+  }
+  TVECM.sim(TVECMobject=TVECMobject,  type="boot", show.parMat=show.parMat, seed=seed)
+}
+
+check.VECM.boot <- function(VECMobject, show.parMat=FALSE,  seed, check=TRUE){
+  if(VECMobject$num_exogen!=0) stop("VECM.boot() does not work for VECM() with exogen variables")
+  ch <- TVECM.sim(TVECMobject=VECMobject,  type="check")
+  res <- isTRUE(all.equal(as.matrix(ch), as.matrix(VECMobject$model[,1:VECMobject$k]), check.attributes=FALSE))
+  res
+}
+
+check.TVECM.boot <- function(TVECMobject){
+  ch <- TVECM.sim(TVECMobject=TVECMobject,  type="check")
+  res <- isTRUE(all.equal(as.matrix(ch), as.matrix(TVECMobject$model[,1:TVECMobject$k]), check.attributes=FALSE))
+  res
+}
+
+as.matrix.ts <-
+  function(x, ...)
+  {
+    # A function implemented by Diethelm Wuertz
+    ans = as.matrix.default(unclass(x))
+    attr(ans, "tsp")<-NULL
+     rownames(ans)<-NULL # colnames(ans)<-NULL
+    ans
+  }
 
 #'Simulation and bootstrap of bivariate VECM/TVECM
 #'
@@ -68,11 +115,13 @@ VECM.sim <- function(data,B,VECMobject,  beta, n=200, lag=1, type=c("simul","boo
 #'multivariate normal is used.
 #'@param show.parMat Logical. Should the parameter matrix be shown? Useful to
 #'understand how to give right input
+#'@param seed Optional. Seed for the random number generation.
 #'@return A matrix with the simulated/bootstraped series.
 #'@author Matthieu Stigler
 #'@seealso \code{\link{TVECM}} to estimate a TVECM, \code{\link{VAR.sim}} to
 #'simulate/bootstrap a VAR.
 #'@keywords ts
+#'@export
 #'@examples
 #'
 #'
@@ -118,14 +167,14 @@ VECM.sim <- function(data,B,VECMobject,  beta, n=200, lag=1, type=c("simul","boo
 #' TVECM.sim.check <- TVECM.sim(TVECMobject=TVECMobject,type="check")
 #' all(TVECM.sim.check==dat)
 #'
-TVECM.sim<-function(data,B,TVECMobject, nthresh=1, Thresh, beta, n=200, lag=1, type=c("simul","boot", "check"),  include = c("const", "trend","none", "both"), starting=NULL, innov=rmnorm(n, mean=0, varcov=varcov), varcov=diag(1,k), show.parMat=FALSE){
+TVECM.sim<-function(data,B,TVECMobject, nthresh=1, Thresh, beta, n=200, lag=1, type=c("simul","boot", "check"),  include = c("const", "trend","none", "both"), starting=NULL, innov=rmnorm(n, mean=0, varcov=varcov), varcov=diag(1,k), show.parMat=FALSE, seed){
 
-
-if(!missing(data)&!missing(B))
-	stop("You have to provide either B or y, but not both")
-p<-lag
-type<-match.arg(type)
-include<-match.arg(include)
+  if(!missing(data)&!missing(B))
+    stop("You have to provide either B or y, but not both")
+  p<-lag
+  type<-match.arg(type)
+  include<-match.arg(include)
+  isMissingB <- missing(B)
 
 ###check correct arguments
 if(!nthresh%in%c(0,1,2))
@@ -146,7 +195,7 @@ if(!missing(B)){
   if(type!="simul"){
     type<-"simul"
     warning("Type check or boot are only avalaible with pre specified data. The type simul was used")
-    }
+  }
   nB<-nrow(B)
   if(nB==1) stop("B matrix should at least have two rows for two variables\n")
   ndig<-4
@@ -172,21 +221,29 @@ if(!missing(B)){
     Bmat<-B
     k <- ncol(y) 		#Number of variables
     T <- nrow(y) 		#Size of start sample
+  if(is.vector(beta)){
+    if(length(beta)==k-1) beta <- c(1, -beta)
+    tBETA<-matrix(beta, nrow=1)
+    r <- 1
+  } else {
+    if(nrow(beta)!=k) stop("beta should have k rows and r cols")
+    r <- ncol(beta)
+    tBETA <- t(beta)
+  }
 }
 
 ### possibility 2: only data is given: compute it with linear or selectSETAR
 else if(!missing(data)){
   if(nthresh==0){
     TVECMobject<-lineVar(data, lag=p, include=include, model="VECM")
-  }
-  else{ 
+  } else { 
     if(!missing(Thresh)){
       if(nthresh==1) {
-	TVECMobject<-TVECM(data, lag=p, include=include, nthresh=nthresh, plot=FALSE, trace=FALSE, th1=list(exact=Thresh))
+        TVECMobject<-TVECM(data, lag=p, include=include, nthresh=nthresh, plot=FALSE, trace=FALSE, th1=list(exact=Thresh))
       } else if(nthresh==2){
-      TVECMobject<-TVECM(data, lag=p, include=include, nthresh=nthresh, plot=FALSE, trace=FALSE, th1=list(exact=Thresh[1]),th2=list(exact=Thresh[2]))
+        TVECMobject<-TVECM(data, lag=p, include=include, nthresh=nthresh, plot=FALSE, trace=FALSE, th1=list(exact=Thresh[1]),th2=list(exact=Thresh[2]))
       }
-    } else{
+    } else {
       TVECMobject<-TVECM(data, lag=p, include=include, nthresh=nthresh, plot=FALSE, trace=FALSE)
     }
   }
@@ -200,7 +257,13 @@ if(!missing(TVECMobject)){
   if(include %in% c("trend", "both"))
     warning(paste("Accuracy of function (tested with arg type=check) is not good when arg include=",include," is given\n"))
   modSpe<-TVECMobject$model.specific
+  LRinclude <- modSpe$LRinclude
+  nthresh <- modSpe$nthresh
+  if(nthresh>0 &&modSpe$model=="only_ECT") stop("TVECM.sim() does not work for 'common=only_ECT'")
+  if(LRinclude!="none") stop("TVECM.sim() does not work for 'LRinclude!='none'")
   beta<- -modSpe$coint[2,1]
+  tBETA <- t(modSpe$coint)
+  r <- modSpe$r
   res<-residuals(TVECMobject)
   Bmat<-coefMat(TVECMobject)
   y<-as.matrix(TVECMobject$model)[,1:k]
@@ -214,17 +277,14 @@ if(!missing(TVECMobject)){
 t <- T-p-1 		#Size of end sample
 npar<-k*(p+ninc+1)
 
-  ##### put coefficients vector in right form according to arg include (arg both need no modif)
-  a<-NULL
-  if(include=="none")
-    for(i in 0:nthresh) a<-c(a, i*(p*k+3)+c(2,3))
-  else if(include=="const")
-    for(i in 0:nthresh) a<-c(a, i*(p*k+3)+c(3))
-  else if(include=="trend")
-    for(i in 0:nthresh) a<-c(a, i*(p*k+2)+c(2))
-    #if (include=="both"): correction useless
-  Bmat<-myInsertCol(Bmat, c=a ,0)
+##### put coefficients vector in right form according to arg include (arg both need no modif)
+  if(include!="both"){
+    aa1 <- r+switch(include, "none"=1:2, "const"=2, "trend"=1, "both"=NULL)
+    aa <- sort(rep(aa1, each=nthresh+1)+ (0:nthresh)*(p*k+max(aa1)))
+    Bmat<-myInsertCol(Bmat, c=aa, 0)
+  }
   nparBmat<-p*k+2+1
+
   
 ##############################
 ###Reconstitution boot/simul
@@ -236,59 +296,55 @@ Yb<-matrix(0, nrow=nrow(y), ncol=k)
 Yb[1:(p+1),]<-y[1:(p+1),]		
 
 trend<-c(rep(NA, T-t),1:t)
-BETA<-matrix(c(1, -beta), nrow=1)
 
 #resampling/ simulation of residual/innovations
 if(type=="simul"&&dim(innov)!=c(n,k))
   stop(paste("input innov is not of right dim, should be matrix with", n,"rows and ", k, "cols\n"))
+if(!missing(seed)) set.seed(seed)
 resids<-switch(type, "boot"=res[sample(seq_len(t), replace=TRUE),], "simul"= innov, "check"=res)
 resb<-rbind(matrix(0,nrow=p+1, ncol=k),resids)
 
-
 if(nthresh==0){
   for(i in (p+2):T){
-    ECT<-Bmat[,1]%*%BETA%*%matrix(Yb[i-1,], ncol=1)
-    Yb[i,]<-rowSums(cbind(Yb[i-1,],Bmat[,2], Bmat[,3]*trend[i], ECT,Bmat[,-c(1,2,3)]%*%matrix(t(Yb[i-c(1:p),]-Yb[i-c(2:(p+1)),]), ncol=1),resb[i,]))
+    ECT<-Bmat[,1:r]%*%tBETA%*%matrix(Yb[i-1,], ncol=1)
+    Yb[i,]<-rowSums(cbind(Yb[i-1,],Bmat[,r+1], Bmat[,r+2]*trend[i], ECT,Bmat[,-c(1:(r+2))]%*%matrix(t(Yb[i-c(1:p),]-Yb[i-c(2:(p+1)),]), ncol=1),resb[i,]))
   }
-}
-
-else if(nthresh==1){
+} else if(nthresh==1){
   BD<-Bmat[,seq_len(nparBmat)]
   BU<-Bmat[,-seq_len(nparBmat)]
   
   for(i in (p+2):(nrow(y))){
-   ECT<-BETA%*%matrix(Yb[i-1,], ncol=1)
-   if(round(ECT,ndig)<=Thresh){
+    ECT<-tBETA%*%matrix(Yb[i-1,], ncol=1)
+    if(round(ECT,ndig)<=Thresh){
       Yb[i,]<-rowSums(cbind(Yb[i-1,],BD[,1]%*%ECT, BD[,2], BD[,3]*trend[i],BD[,-c(1,2,3)]%*%matrix(t(Yb[i-c(1:p),]-Yb[i-c(2:(p+1)),]), ncol=1),resb[i,]))
-      }
-    else{
+    }  else{
       Yb[i,]<-rowSums(cbind(Yb[i-1,],BU[,1]%*%ECT, BU[,2], BU[,3]*trend[i],BU[,-c(1,2,3)]%*%matrix(t(Yb[i-c(1:p),]-Yb[i-c(2:(p+1)),]), ncol=1),resb[i,]))
-      }
+    }
   }
-}
-
-
-else if(nthresh==2){
+} else if(nthresh==2){
   BD <- Bmat[,seq_len(nparBmat)]
   BM <- Bmat[,seq_len(nparBmat)+nparBmat]
   BU <- Bmat[,seq_len(nparBmat)+2*nparBmat]
   for(i in (p+2):(nrow(y))){
-  ECT<-BETA%*%matrix(Yb[i-1,], ncol=1)
+    ECT<-tBETA%*%matrix(Yb[i-1,], ncol=1)
     if(round(ECT,ndig)<=Thresh[1]){ 
       Yb[i,]<-rowSums(cbind(Yb[i-1,],BD[,1]%*%ECT,BD[,2], BD[,3]*trend[i], BD[,-c(1,2,3)]%*%matrix(t(Yb[i-c(1:p),]-Yb[i-c(2:(p+1)),]), ncol=1),resb[i,]))
-      }
-    else if(round(ECT,ndig)>Thresh[2]) {
+    } else if(round(ECT,ndig)>Thresh[2]) {
       Yb[i,]<-rowSums(cbind(Yb[i-1,],BU[,1]%*%ECT,BU[,2], BU[,3]*trend[i],BU[,-c(1,2,3)]%*%matrix(t(Yb[i-c(1:p),]-Yb[i-c(2:(p+1)),]), ncol=1),resb[i,]))
-      }
-    else{
+    } else{
       Yb[i,]<-rowSums(cbind(Yb[i-1,],BM[,1]%*%ECT,BM[,2], BM[,3]*trend[i],BM[,-c(1,2,3)]%*%matrix(t(Yb[i-c(1:p),]-Yb[i-c(2:(p+1)),]), ncol=1),resb[i,]))
-      }
+    }
   }
 }
 
 if(show.parMat){
-  colnames_Matrix_system<-as.vector(outer(c("ECT","const", "trend", lags2), pa, paste, sep=""))
-  colnames(Bmat)<- colnames_Matrix_system
+  if(!isMissingB){
+    colnames_Matrix_system<-as.vector(outer(c("ECT","Const", "Trend", lags2), pa, paste, sep=""))
+    colnames(Bmat)<- colnames_Matrix_system
+  } else if(include!="both"){
+    add <- switch(include, "const"="Trend", "trend"="Const", "none"=c("Const", "Trend"))
+    colnames(Bmat)[aa] <- rep(add, nthresh+1)
+  }
   print(Bmat)
 }
 res<-round(Yb, ndig)

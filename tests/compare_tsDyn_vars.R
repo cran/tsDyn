@@ -42,7 +42,7 @@ deftol <- .Machine$double.eps ^ 0.5
 lowtol <- 1.e-07
 lowlowtol <- 1.e-06
 comp_teststat <- function(x, tol=deftol) all.equal(x[[1]]@teststat, rev(rank.test(x[[2]])$res_df[,"eigen"]), check.attributes=FALSE, tolerance=tol)
-comp_betas <- function(x, tol=deftol) all.equal(cajorls(x[[1]])$beta, x[[2]]$model.specific$coint, check.attributes=FALSE, tolerance=tol)
+comp_betas <- function(x, tol=deftol) all.equal(cajorls(x[[1]])$beta, x[[2]]$model.specific$beta, check.attributes=FALSE, tolerance=tol)
 comp_coefs <- function(x, tol=deftol) all.equal(coefficients(cajorls(x[[1]])$rlm), t(coefficients(x[[2]])), check.attributes=FALSE, tolerance=tol)
 comp_LL <- function(x) all.equal(as.numeric(logLik(vec2var(x[[1]]))), logLik(x[[2]]), check.attributes=FALSE)
 comp_IRF <- function(x) all.equal(irf(vec2var(x[[1]]), boot=FALSE)$irf, irf(x[[2]], boot=FALSE)$irf, check.attributes=FALSE)
@@ -52,6 +52,10 @@ comp_resid <- function(x, tol=deftol) all.equal(residuals(vec2var(x[[1]])), resi
 comp_fitted <- function(x) all.equal(fitted(vec2var(x[[1]])), fitted(x[[2]], level="original"), check.attributes=FALSE)
 comp_predictOld <- function(x) all.equal(predict(vec2var(x[[1]]))$fcst, tsDyn:::predictOld.VECM(x[[2]])$fcst, check.attributes=FALSE)
 comp_predict <- function(x) all.equal(sapply(predict(vec2var(x[[1]]), n.ahead=5)$fcst,function(x) x[,"fcst"]), predict(x[[2]]), check.attributes=FALSE)
+comp_VECM_coefA <- function(x,...) all.equal(coefA(x[[1]]), coefA(x[[2]]), check.attributes=FALSE,...)
+comp_VECM_coefB <- function(x,...) all.equal(coefB(x[[1]]), coefB(x[[2]]), check.attributes=FALSE,...)
+comp_VECM_coefPI <- function(x) all.equal(coefPI(x[[1]]), coefPI(x[[2]]), check.attributes=FALSE)
+comp_VECM_logLik <- function(x, r=1) all.equal(logLik(x[[1]], r=r), logLik(x[[2]], r=r), check.attributes=FALSE)
 
 ### Small function to print nicely output of all.equal, rounding the number:
 
@@ -79,6 +83,26 @@ print(sapply(all_models, comp_resid, tol=lowtol)) # 5 and 6
 print(sapply(all_models, comp_fitted)) 
 roundAll.Equal(sapply(all_models, comp_predict)) # 5 and 6
 lapply(sapply(all_models, comp_predictOld),roundAll.Equal, round=7) # 5 and 6
+sapply(all_models, comp_VECM_coefA, tolerance=1e-07)
+sapply(all_models, comp_VECM_coefB, tolerance=1e-07)
+sapply(all_models, comp_VECM_coefPI)
+mapply(function(r) sapply(all_models, comp_VECM_logLik, r=r), r=0:4)
+
+## restricted betas:
+all.equal(coefA(vecm_l1_co_tsD),coefA(vecm_l1_co_var), check.attributes=FALSE)
+all.equal(coefB(vecm_l1_co_tsD),coefB(vecm_l1_co_var), check.attributes=FALSE)
+
+R <- matrix(c(1,0.1, -0.24, 3.6), ncol=1)
+
+vecm_Rrest_tsD <-VECM(Canada, lag=1, include="const", estim="ML", beta=R)
+vecm_Rrest_var <-blrtest(vecm_l1_co_var, H=R, r=1)
+
+all.equal(coefA(vecm_Rrest_tsD),coefA(vecm_Rrest_var), check.attributes=FALSE)
+all.equal(coefB(vecm_Rrest_tsD),coefB(vecm_Rrest_var), check.attributes=FALSE)
+all.equal(logLik(vecm_Rrest_tsD, r=1),logLik(vecm_Rrest_var, r=1), check.attributes=FALSE)
+
+all.equal(deviance(vecm_Rrest_tsD),sum(deviance(cajorls(vecm_Rrest_var)[[1]])), check.attributes=FALSE)
+all.equal(-2*(logLik(vecm_Rrest_tsD)-logLik(vecm_l1_co_tsD)), vecm_Rrest_var@teststat)
 
 #########################
 ##### VAR #####

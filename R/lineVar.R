@@ -17,8 +17,7 @@
 #'class numeric) can be added for the estimation of the cointegrating value and
 #'for the ECT. This is only working when the beta value is not pre-specified.
 #'
-#'The arg beta is the cointegrating value, the cointegrating vector will be
-#'taken as: (1, -beta).
+#' The argument \code{beta} is only for \code{\link{VECM}}, look at the specific help page for more details. 
 #'
 #'@param data multivariate time series (first row being first=oldest value)
 #'@param lag Number of lags to include in each regime
@@ -28,7 +27,7 @@
 #'@param I For VAR only: whether in the VAR the variables are to be taken in
 #'levels (original series) or in difference, or similarly to the univariate ADF
 #'case.
-#'@param beta for VECM only: cointegrating value. If null, will be estimated
+#'@param beta for VECM only: imposed cointegrating value. If null, will be estimated
 #'@param LRinclude Possibility to include in the long-run relationship and the
 #'ECT trend, constant... Can also be a matrix with exogeneous regressors
 #'@param estim Type of estimator for the VECM: '2OLS' for the two-step approach
@@ -44,6 +43,7 @@
 #'\code{\link{TVAR}} and \code{\link{TVECM}} for the corresponding threshold
 #'models. \code{\link{linear}} for the univariate AR model.
 #'@keywords ts
+#'@export
 #'@examples
 #'
 #'data(zeroyld)
@@ -118,7 +118,9 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 ###Check args
   include<-match.arg(include)
   LRinclude<-match.arg(LRinclude)
-  if(lag<1) stop("Lag is minimum 1")
+  if(lag==0) {
+    warning("Lag=0 not fully implemented, methods not expected to work: fevd, predict, irf,...")
+  }
   if(LRinclude%in%c("const", "both"))  include<-"none"
   ninclude<-switch(include, "const"=1, "trend"=1,"none"=0, "both"=2)
   model<-match.arg(model)
@@ -165,45 +167,46 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
   }
 
 ###Regressors matrix
-  Z <- switch(include,
-	      "none" = Z,  
-	      "const" = cbind(1, Z), 
-	      "trend" = cbind(seq_len(t), Z),
-	      "both"  = cbind(rep(1,t),seq_len(t), Z))
+  incReg <- switch(include,
+                   "const" = matrix(1, nrow=t, ncol=1), 
+                   "trend" = matrix(seq_len(t), ncol=1),
+                   "both"  = cbind(rep(1,t),seq_len(t)),
+                   "none"=NULL)
+  Z <-if(lag==0) incReg else cbind(incReg, Z)
 
   if(!is.null(exogen)){
-    if(is.data.frame(exogen)) exogen <- as.matrix(exogen)
+    if(is.data.frame(exogen)|is.vector(exogen)) exogen <- as.matrix(exogen)
     n_exo <- NROW(exogen)
-    if(n_exo!=nrow(Z)){
+    if(n_exo!=t){
       if(n_exo!=T)  warning("exogen is of size ", n_exo, "while full/end-sample size is of size", T,"/", nrow(Z), "series shortened")
-      exogen <- myTail(exogen, nrow(Z))
+      exogen <- myTail(exogen, t, addrownums=FALSE)
     }
-    Z <- cbind(Z, exogen)
+    Z <- if(lag==0 & include=="none") exogen else cbind(Z, exogen)
   }
 
 
 ##VECM: Long-run relationship OLS estimation
   if(model=="VECM"&estim=="2OLS"){
 	  #beta has to be estimated
-    beta.estimated<-if(is.null(beta)) TRUE else FALSE
+    beta.estimated <- is.null(beta)
     if(is.null(beta) ){
 
     ## build LRplus: deterministic/exogeneous regressor in coint
       if(class(LRinclude)=="character"){
-	LRplus <-switch(LRinclude, "none"=NULL,"const"=rep(1,T),"trend"=seq_len(T),"both"=cbind(rep(1,T),seq_len(T)))
-	LRinc_name <- switch(LRinclude, "const"="const", "trend"="trend", "both"=c("const", "trend"), "none"=NULL)
-	LRinc_dim <- switch(LRinclude, "const"=1, "trend"=1, "both"=2, "none"=0)
+        LRplus <-switch(LRinclude, "none"=NULL,"const"=rep(1,T),"trend"=seq_len(T),"both"=cbind(rep(1,T),seq_len(T)))
+        LRinc_name <- switch(LRinclude, "const"="const", "trend"="trend", "both"=c("const", "trend"), "none"=NULL)
+        LRinc_dim <- switch(LRinclude, "const"=1, "trend"=1, "both"=2, "none"=0)
       } else if(class(LRinclude)%in%c("matrix", "numeric")) {
-	LRplus<-LRinclude
+        LRplus<-LRinclude
       } else{
-	stop("Argument LRinclude badly given")
+        stop("Argument LRinclude badly given")
       }
     ## run coint regression
       if(LRinclude=="none"){
-	cointLM<-lm(y[,1] ~  y[,-1]-1)
+        cointLM<-lm(y[,1] ~  y[,-1]-1)
       } else {
-	cointLM<-lm(y[,1] ~  y[,-1]-1+ LRplus)
-	Xminus1 <- cbind(Xminus1, tail(LRplus,nrow(Xminus1)))
+        cointLM<-lm(y[,1] ~  y[,-1]-1+ LRplus)
+        Xminus1 <- cbind(Xminus1, tail(LRplus,nrow(Xminus1)))
       }
       
       betaLT<-coint<-c(1,-cointLM$coef)
@@ -214,9 +217,9 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
     } else {
       if(length(beta)!=k-1) stop("Arg 'beta' should be of length k-1")
       if(LRinclude!="none")
-	warning("Arg LRinclude not taken into account when beta is given by user")
-	LRinc_name <- NULL
-	LRinc_dim <- 0
+        warning("Arg LRinclude not taken into account when beta is given by user")
+      LRinc_name <- NULL
+      LRinc_dim <- 0
       coint<-c(1, -beta)
       betaLT<-c(1,-beta)
     }
@@ -229,24 +232,31 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 
 ##VECM: ML (Johansen ) estimation of cointegrating vector
   else if(model=="VECM"&estim=="ML"){
-  beta.estimated<-if(is.null(beta)) TRUE else FALSE
-    if (is.null(beta)){
+    beta.estimated<- is.null(beta)
+    if(lag==0 & include=="none" & is.null(exogen)){
+     u <- Y
+     v <- Xminus1
+    } else {
       #Auxiliary regression 1
       reg_res1<-lm.fit(Z,Y)
       u<-residuals(reg_res1)
       #Auxiliary regression 2
       reg_res2<-lm.fit(Z,Xminus1)
       v<-residuals(reg_res2)
-      #Auxiliary regression 3
-      if(LRinclude!="none"){
-	add <- switch(LRinclude, "const"=matrix(1, nrow=nrow(Z)), "trend"=matrix(1:nrow(Z), nrow=nrow(Z)), "both"=cbind(1,1:nrow(Z)))
-	reg_res3<-lm.fit(Z,add)
-	v<-cbind(v,residuals(reg_res3)) # equ 20.2.46 in Hamilton 
-      }
-      #Moment matrices
-      S00<-crossprod(u)
-      S11<-crossprod(v)
-      S01<-crossprod(u,v)
+    }
+    #Auxiliary regression 3
+    if(LRinclude!="none"){
+      add <- switch(LRinclude, "const"=matrix(1, nrow=t), 
+                    "trend"=matrix(1:t, nrow=t), 
+                    "both"=cbind(1,1:t))
+      reg_res3 <- if(lag==0) add else residuals(lm.fit(Z,add))
+      v<-cbind(v,reg_res3) # equ 20.2.46 in Hamilton 
+    }
+    #Moment matrices
+    S00<-crossprod(u)
+    S11<-crossprod(v)
+    S01<-crossprod(u,v)
+    if(beta.estimated){
       SSSS<-solve(S11)%*%t(S01)%*%solve(S00)%*%S01
       eig<-eigen(SSSS)
       ve<-Re(eig$vectors)
@@ -260,87 +270,50 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
       ve_4 <- ve_3 %*% solve(t(C) %*% ve_3)
 
       #compute A (speed adjustment)
-      z0<-t(u)%*%v%*%ve_no[,1:r]%*%t(ve_no[,1:r])
+      z0<-t(u)%*%v%*%tcrossprod(ve_no[,1:r])
 
 	###Slope parameters
       if(LRinclude!="none"){
-	ECTminus1<-cbind(Xminus1,add)%*%ve_4
+        ECTminus1<-cbind(Xminus1,add)%*%ve_4
       }else{
-	ECTminus1<-Xminus1%*%ve_4
+        ECTminus1<-Xminus1%*%ve_4
       }
-      Z<-cbind(ECTminus1,Z)
       coin_ve_names <- switch(LRinclude, "const"="const", "trend"="trend", "both"=c("const", "trend"), "none"=NULL)
       dimnames(ve_4)<-list(c(colnames(data), coin_ve_names), paste("r", 1:r, sep=""))
       betaLT<-ve_4
-    }else{  #end beta to be estimated
-      betaLT<-beta
-      ECTminus1<-Xminus1%*%c(1,-betaLT)
-      Z<-cbind(ECTminus1,Z)
-    }
+#     if beta restricted:
+    } else {
+      betaLT <- as.matrix(beta)
+      if(ncol(betaLT)!=r) stop("Argument 'beta' should have as many columns as 'r'")
+      if(ncol(betaLT)==1&&nrow(betaLT)==k-1) betaLT <- rbind(1,betaLT)
+      if(nrow(betaLT)!=k) stop("Argument 'beta' should have as many rows as 'k'")
+      ECTminus1 <- Xminus1%*%betaLT 
+      ## restricted ML:
+      S11_r <- t(betaLT)%*%S11%*%betaLT ## equa 20.3.11 Hamilton 1994, p. 649
+      S01_r <- S01 %*%betaLT ## equa 20.3.12 Hamilton 1994, p. 649
+      SSSS_r <-solve(S11_r)%*%t(S01_r)%*%solve(S00)%*%S01_r
+      eig_r<-eigen(SSSS_r)
+      va<-Re(eig_r$values)
+     }
+    Z<-cbind(ECTminus1,Z)
   }#end model=="VECM"&estim=="ML"
 
 
 ###Slope parameters, residuals and fitted
 #   B<-t(Y)%*%Z%*%solve(t(Z)%*%Z)		#B: OLS parameters, dim 2 x npar
   B<- t(qr.coef(qr(Z),Y))
-
-
-#'fitted method for objects of class nlVar, i.e. VAR and VECM models.
-#'
-#'Returns the fitted values of the model, either as computed in the model, or
-#'back to the original series level.
-#'
-
-#'
-#'In case of a VAR in differences, in ADF specification, or a VECM, the fitted
-#'values are actually in differences. With the option \code{level="original"},
-#'the function returns the series in the original level.
-#'
-#'For VAR in levels, the two arguments are evidently the same and hence it is
-#'not taken into account, returning a warning.
-#'
-#'@aliases fitted fitted.nlVar
-#'@param object An object of class \sQuote{nlVar}; generated by
-#'\code{\link{VECM}} or \code{\link{lineVar}}.
-#'@param level How to return the fitted values. See below.
-#'@param \dots Currently not used.
-#'@return A matrix.
-#'@author Matthieu Stigler
-#'@keywords regression
-#'@examples
-#'
-#'
-#'## estimate models
-#'data(barry)
-#'
-#'ve <- VECM(barry, lag=2)
-#'va <- lineVar(barry, lag=1)
-#'va_diff <- lineVar(barry, lag=1, I="diff")
-#'va_ADF <- lineVar(barry, lag=1, I="ADF")
-#'
-#'
-#'## get fitted values:
-#'tail(fitted(ve))
-#'tail(fitted(ve, level="original"))
-#'
-#'tail(fitted(va))
-#'tail(fitted(object=va, level="original"))
-#'
-#'tail(fitted(va_diff))
-#'tail(fitted(object=va_diff, level="original"))
-#'
-#'tail(fitted(va_ADF))
-#'tail(fitted(object=va_ADF, level="original"))
-#'
-#'
   fitted<-Z%*%t(B)
   res<-Y-fitted
 
 ###naming of variables and parameters
   npar<-ncol(B)*nrow(B)
   rownames(B)<-paste("Equation",colnames(data))
-  LagNames<-c(paste(rep(colnames(data),length(Lags)), -rep(Lags, each=k)))
-  if(I=="ADF") LagNames <- paste("D", LagNames,sep="_")
+  if(p>0){
+    LagNames<-c(paste(rep(colnames(data),length(Lags)), -rep(Lags, each=k)))
+    if(I=="ADF") LagNames <- paste("D", LagNames,sep="_")
+  } else {
+    LagNames <- NULL
+  }
   ECT<- if(model=="VECM") paste("ECT", if(r>1) 1:r else NULL, sep="") else NULL
   Xminus1Names<- if(I=="ADF") paste(colnames(data),"-1",sep="") else NULL
   BnamesInter<-switch(include,"const"="Intercept","none"=NULL,"trend"="Trend","both"=c("Intercept","Trend"))
@@ -370,35 +343,31 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 
   if(model=="VECM"){
     model.specific$beta<- betaLT
+    model.specific$coint <- betaLT
     model.specific$r<-r
     model.specific$estim<-estim
     model.specific$LRinclude<-LRinclude
     model.specific$beta.estimated<-beta.estimated
-
+    model.specific$estim <- estim
+    
     if(estim=="ML"){
       model.specific$S00<-S00
       model.specific$lambda<-va
-      model.specific$coint<-ve_4
-      model.specific$estim<-"ML"
-    } else {
-      model.specific$r<-1
-      model.specific$coint<-coint_export
-      model.specific$estim<-"OLS"
-    }
+    } 
   }
 
 
   z<-list(residuals=res,  
-	  coefficients=B,  k=k, t=t,T=T, npar=npar, nparB=ncol(B), type="linear", 
-	  fitted.values=fitted, 
-	  model.x=Z, 
-	  include=include,
-	  lag=lag, 
-	  model=YnaX, 
-	  df.residual=t-npar/k, 
-	  exogen = !is.null(exogen),
-	  num_exogen = if(!is.null(exogen)) NCOL(exogen) else 0,
-	  model.specific=model.specific)
+          coefficients=B,  k=k, t=t,T=T, npar=npar, nparB=ncol(B), type="linear", 
+          fitted.values=fitted, 
+          model.x=Z, 
+          include=include,
+          lag=lag, 
+          model=YnaX, 
+          df.residual=t-npar/k, 
+          exogen = !is.null(exogen),
+          num_exogen = if(!is.null(exogen)) NCOL(exogen) else 0,
+          model.specific=model.specific)
   if(model=="VAR"){
     class(z)<-c("VAR","nlVar")
   } else {
@@ -415,41 +384,50 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 #### VECM function: wrapper to lineVar
 
 
-#'Estimation of Vector error correction model (VECM)
+#' Estimation of Vector error correction model (VECM)
 #'
-#'Estimate either a VECM by Engle-Granger or Johansen (MLE) method.
+#' Estimate either a VECM by Engle-Granger or Johansen (MLE) method.
 #'
-#'This function is just a wrapper for the \code{\link{lineVar}}, with
-#'model="VECM".
+#' This function is just a wrapper for the \code{\link{lineVar}}, with
+#' model="VECM".
 #'
-#'More comprehensive functions for VECM are in package \pkg{vars}. A few
-#'differences appear in the VECM estimation: \describe{ \item{Engle-Granger
-#'estimator}{The Engle-Granger estimator is available}
-#'\item{Presentation}{Results are printed in a different ways, using a matrix
-#'form} \item{lateX export}{The matrix of coefficients can be exported to
-#'latex, with or without standard-values and significance stars}
-#'\item{Prediction}{The \code{predict} method contains a \code{newdata}
-#'argument allowing to compute rolling forecasts.} }
+#' More comprehensive functions for VECM are in package \pkg{vars}. A few
+#' differences appear in the VECM estimation: \describe{ \item{Engle-Granger
+#' estimator}{The Engle-Granger estimator is available}
+#' \item{Presentation}{Results are printed in a different ways, using a matrix
+#' form} \item{lateX export}{The matrix of coefficients can be exported to
+#' latex, with or without standard-values and significance stars}
+#' \item{Prediction}{The \code{predict} method contains a \code{newdata}
+#' argument allowing to compute rolling forecasts.} }
 #'
-#'Two estimators are available: the Engle-Granger two step approach
-#'(\code{2OLS}) or the Johansen (\code{ML}). For the 2OLS, deterministics
-#'regressors (or external variables if LRinclude is of class numeric) can be
-#'added for the estimation of the cointegrating value and for the ECT. This is
-#'only working when the beta value is not pre-specified.
+#' Two estimators are available: the Engle-Granger two step approach
+#' (\code{2OLS}) or the Johansen (\code{ML}). For the 2OLS, deterministics
+#' regressors (or external variables if LRinclude is of class numeric) can be
+#' added for the estimation of the cointegrating value and for the ECT. This is
+#' only working when the beta value is not pre-specified.
 #'
-#'The arg beta is the cointegrating value, the cointegrating vector will be
-#'taken as: (1, -beta).
+#' The arg beta is the cointegrating value, the cointegrating vector will be
+#' taken as: (1, -beta).
 #'
-#'Note that the lag specification corresponds to the lags in the VECM
-#'representation, not in the VAR (as is done in package vars or software
-#'GRETL). Basically, a VAR with 2 lags corresponds here to a VECM with 1 lag.
-#'Lag 0 in the VECM is not allowed.
+#' Note that the lag specification corresponds to the lags in the VECM
+#' representation, not in the VAR (as is done in package vars or software
+#' GRETL). Basically, a VAR with 2 lags corresponds here to a VECM with 1 lag.
+#' Lag 0 in the VECM is not allowed.
+#' 
+#' #'The arg \code{beta} allows to specify constrained cointegrating values, leading to
+#' \eqn{ECT= \beta^{'}X_{t-1}}. It should be specified as a \eqn{K \times r} matrix. In case of
+#' \eqn{r=1}, can also be specified as a vector. Note that the vector should be normalised, 
+#' with the first value to 1, and the next values showing the opposite sign in the long-run relationship \eqn{- \beta}. 
+#' In case the vector has \eqn{K-1} values, this is what \code{lineVar} is doing, setting \eqn{(1, - \beta)}. 
+#' Note finally one should provide values for all
+#' the coefficients (eventually except for special case of r=1 and k-1), if you want to provide only part of the 
+#' parameters, and let the others be estimated, look at the functions in package urca. 
 #'
-#'@param data multivariate time series (first row being first=oldest value)
-#'@param lag Number of lags (in the VECM representation, see Details)
-#'@param r Number of cointegrating relationships
-#'@param include Type of deterministic regressors to include
-#'@param beta Possibility to impose a cointegrating value. By default is null,
+#' @param data multivariate time series (first row being first=oldest value)
+#' @param lag Number of lags (in the VECM representation, see Details)
+#' @param r Number of cointegrating relationships
+#' @param include Type of deterministic regressors to include
+#' @param beta for VECM only: imposed cointegrating value. If null, will be estimated
 #'so values will be estimated
 #'@param LRinclude Type of deterministic regressors to include in the long-term
 #'relationship. Can also be a matrix with exogeneous regressors (2OLS only).
@@ -471,6 +449,7 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 #'the correspoding threshold models. \code{\link{linear}} for the univariate AR
 #'model.
 #'@keywords ts
+#'@export
 #'@examples
 #'
 #'data(zeroyld)
@@ -486,11 +465,11 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 #'if(require(vars)) {
 #'  data(finland)
 #'  #check long coint values
-#'    all.equal(VECM(finland, lag=2, estim="ML", r=2)$model.specific$coint, 
-#'              cajorls(ca.jo(finland, K=3, spec="transitory"), r=2)  $beta, check.attr=FALSE)
+#'    all.equal(VECM(finland, lag=2, estim="ML", r=2)$model.specific$beta, 
+#'              cajorls(ca.jo(finland, K=3, spec="transitory"), r=2)  $beta, check.attributes=FALSE)
 #' # check OLS parameters
 #'   all.equal(t(coefficients(VECM(finland, lag=2, estim="ML", r=2))), 
-#'     coefficients(cajorls(ca.jo(finland, K=3, spec="transitory"), r=2)$rlm), check.attr=FALSE)
+#'     coefficients(cajorls(ca.jo(finland, K=3, spec="transitory"), r=2)$rlm), check.attributes=FALSE)
 #'
 #'}
 #'
@@ -537,11 +516,12 @@ toLatex(summary(aVAR))
 
 
 
-
-print.VAR<-function(x,...){
+#' @S3method print VAR
+print.VAR <- function(x,...){
 	print(coef(x))
 }
 
+#' @S3method summary VAR
 summary.VAR<-function(object, digits=4,...){
   x<-object
   r<-4
@@ -582,7 +562,7 @@ summary.VAR<-function(object, digits=4,...){
 }
 
 
-
+#' @S3method print summary.VAR
 print.summary.VAR<-function(x,...){
   cat("#############\n###Model", attr(x,"model"),"\n#############")
   cat("\nFull sample size:",x$T, "\tEnd sample size:", x$t) 
@@ -597,6 +577,7 @@ print.summary.VAR<-function(x,...){
 
 }
 
+#' @S3method vcov VAR
 vcov.VAR<-function(object, ...){
   sum<-summary.VAR(object)
   so<-sum$cov.unscaled%x%sum$sigma
@@ -607,6 +588,7 @@ vcov.VAR<-function(object, ...){
   so
 }
 
+#' @S3method toLatex VAR
 toLatex.VAR<-function(object,..., digits=4, parenthese=c("StDev","Pvalue"), label){
   x<-object
   if(attr(x,"model")=="VECM"&&x$model.specific$LRinclude!="none") stop("toLatex not implemented now for models with arg 'LRinclude' different from 'none'") 

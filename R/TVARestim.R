@@ -58,6 +58,7 @@
 #'Adjustment to the Law of One Price," Macroeconomic Dynamics, Cambridge
 #'University Press, vol. 5(4), pages 533-76, September.
 #'@keywords ts
+#'@export
 #'@examples
 #'
 #'data(zeroyld)
@@ -160,8 +161,10 @@ if(!missing(ngrid)){
 }
 if(!missing(gamma)){
 	gammas<-gamma
-	plot<-FALSE}
-Y<-t(Y)					#dim k x t
+	plot<-FALSE
+}
+
+Y_t<-t(Y)					#dim k x t
 
 if(!missing(around)){
 	if(missing(ngrid)) ngrid<-20
@@ -185,11 +188,11 @@ loop1_onedummy <- function(gam1, thDelay){
 	regimeDown<-dummyDown*Z
 	##SSR
 	if(min(ndown, 1-ndown)>=trim){
-		Z1 <- t(cbind(regimeDown, Z))		# dim k(p+1) x t
-		B1 <- tcrossprod(Y,Z1) %*% solve(tcrossprod(Z1))
-		res<-crossprod(c( Y - B1 %*% Z1))}
-	else
+		Z1 <- cbind(regimeDown, Z)		# dim t x k(p+1) 
+		res <- crossprod(c(lm.fit(x=Z1, y=Y)$resid))
+	}	else {
 		res<-NA
+	}
 	return(res)
 } #end of the function
 
@@ -201,11 +204,11 @@ loop1_twodummy <- function(gam1, thDelay){
 	ndown<-mean(d1)
 	##SSR
 	if(min(ndown, 1-ndown)>=trim){
-		Z1 <- t(cbind(d1 * Z, (1-d1)*Z))		# dim k(p+1) x t
-		B1 <- tcrossprod(Y,Z1) %*% solve(tcrossprod(Z1))
-		res<-crossprod(c( Y - B1 %*% Z1))}
-	else
+	  Z1 <- cbind(d1 * Z, (1-d1)*Z)    # dim k(p+1) x t
+	  res <- crossprod(c(lm.fit(x=Z1, y=Y)$resid))
+	}	else{
 		res<-NA
+	}
 	return(res)
 } #end of the function
 
@@ -215,11 +218,11 @@ loop1_twodummy_oneIntercept <- function(gam1, thDelay){
 	d1<-ifelse(trans[,thDelay]<=gam1, 1,0)
 	ndown<-mean(d1)
 	if(min(ndown, 1-ndown)>=trim){
-		Z1 <- t(cbind(1,d1 * Z[,-1], (1-d1)*Z[,-1]))		# dim k(p+1) x t
-		B1 <- tcrossprod(Y,Z1) %*% solve(tcrossprod(Z1))
-		res<-crossprod(c( Y - B1 %*% Z1))}
-	else
+		Z1 <- cbind(1,d1 * Z[,-1], (1-d1)*Z[,-1])		# dim k(p+1) x t
+		res <- crossprod(c(lm.fit(x=Z1, y=Y)$resid)) 
+	} else {
 		res<-NA
+	}
 	return(res)
 } #end of the function
 
@@ -239,8 +242,8 @@ loop2 <- function(gam1, gam2,thDelay){
 	##SSR from TVAR(3)
 	#print(c(ndown,1-nup-ndown,nup))
 	if(min(nup, ndown, 1-nup-ndown)>trim){
-		Z2 <- t(cbind(regimedown, (1-dummydown-dummyup)*Z, regimeup))		# dim k(p+1) x t	
-		res <- crossprod(c( Y - tcrossprod(Y,Z2) %*% solve(tcrossprod(Z2))%*%Z2))	#SSR
+		Z2 <- cbind(regimedown, (1-dummydown-dummyup)*Z, regimeup)		# dim k(p+1) x t
+		res <- crossprod(c(lm.fit(x=Z2, y=Y)$resid)) 
 	}
 	else
 		res <- NA
@@ -258,8 +261,8 @@ loop2_oneIntercept <- function(gam1, gam2,thDelay){
 	##SSR from TVAR(3)
 	#print(c(ndown,1-nup-ndown,nup))
 	if(min(nup, ndown, 1-nup-ndown)>trim){
-		Z2 <- t(cbind(1,regimedown, (1-dummydown-dummyup)*Z, regimeup))		# dim k(p+1) x t	
-		res <- crossprod(c( Y - tcrossprod(Y,Z2) %*% solve(tcrossprod(Z2))%*%Z2))	#SSR
+		Z2 <- cbind(1,regimedown, (1-dummydown-dummyup)*Z, regimeup)		# dim k(p+1) x t	
+		res <- crossprod(c(lm.fit(x=Z2, y=Y)$resid)) 
 	}
 	else
 		res <- NA
@@ -385,9 +388,9 @@ if(nthresh==1){
 		regimeUp<-dummyup*Z[,-val]
 	else regimeUp<-Z
 	if(commonInter)
-		Zbest<-t(cbind(1,regimeDown,regimeUp))
+		Zbest<-cbind(1,regimeDown,regimeUp)
 	else
-		Zbest <- t(cbind(regimeDown,regimeUp))		# dim k(p+1) x t
+		Zbest <- cbind(regimeDown,regimeUp)		# dim k(p+1) x t
 }
 
 if(nthresh==2|nthresh==3){
@@ -399,18 +402,22 @@ if(nthresh==2|nthresh==3){
 	regimeup <- dummyup*Z[,-val]
 	dummymid<-1-dummydown-dummyup
 	if(commonInter)
-		Zbest <- t(cbind(1,regimedown,dummymid*Z[,-1], regimeup))	# dim k(p+1) x t
+		Zbest <- cbind(1,regimedown,dummymid*Z[,-1], regimeup)	# dim k(p+1) x t
 	else
-		Zbest <- t(cbind(regimedown,dummymid*Z, regimeup))	# dim k(p+1) x t
+		Zbest <- cbind(regimedown,dummymid*Z, regimeup)	# dim k(p+1) x t
 }
 
+Zbest_t <- t(Zbest)
 reg<-if(nthresh==1) dummydown+2*dummyup else dummydown+2*dummymid+3*dummyup
 regime <- c(rep(NA, T-t), reg)
 
 
-Bbest <- Y %*% t(Zbest) %*% solve(Zbest %*% t(Zbest))
-fitted<-Bbest %*% Zbest
-resbest <- t(Y - fitted)
+final <- lm.fit(x=Zbest, y=Y)
+
+Bbest <- t(final$coef)
+fitted <- final$fitted
+resbest <- final$residuals
+
 SSRbest <- as.numeric(crossprod(c(resbest)))
 nparbest<-nrow(Bbest)*ncol(Bbest)
 
@@ -433,7 +440,7 @@ else if (nthresh==2)
 	nobs <- c(ndown=ndown, nmiddle=1-nup-ndown,nup=nup)
 
 ###Y and regressors matrix
-tZbest<-t(Zbest)
+tZbest<-Zbest
 naX<-rbind(matrix(NA, ncol=ncol(tZbest), nrow=p), tZbest)
 YnaX<-cbind(data, naX)
 BlistMod<-nameB(mat=Bbest, commonInter=commonInter, Bnames=Bnames, nthresh=nthresh, npar=npar,sameName=FALSE )
@@ -475,6 +482,7 @@ return(z)
 }	#end of the whole function
 
 
+#' @S3method print TVAR
 print.TVAR<-function(x,...){
 # 	NextMethod(...)
 	cat("Model TVAR with ", x$model.specific$nthresh, " thresholds\n\n")
@@ -483,6 +491,7 @@ print.TVAR<-function(x,...){
 	print(paste(x$model.specific$Thresh, collapse=" "))
 }
 
+#' @S3method summary TVAR
 summary.TVAR<-function(object,...){
 	x<-object
 	xspe<-x$model.specific
@@ -524,6 +533,7 @@ summary.TVAR<-function(object,...){
 	return(x)
 }
 
+#' @S3method print summary.TVAR
 print.summary.TVAR<-function(x,digits = max(3, getOption("digits") - 3), signif.stars = getOption("show.signif.stars"),...){
 	coeftoprint<-list()
 	for(i in 1:length(x$bigcoefficients)){
@@ -596,7 +606,7 @@ plot3<-function(th,nthresh, allTh){
     legend("topleft", pch=1, legend=leg, col=c(allDelay+1,c(2:(nthresh+1))), bg="white")
 }
 
-
+#' @S3method plot TVAR
 plot.TVAR<-function(x,ask=interactive(), ...){
   th<-x$model.specific$Thresh
   nthresh<-x$model.specific$nthresh
@@ -611,7 +621,7 @@ plot.TVAR<-function(x,ask=interactive(), ...){
 }
 
 
-
+#' @S3method toLatex TVAR
 toLatex.TVAR<-function(object,..., digits=4, parenthese=c("StDev","Pvalue")){
 	x<-object
 	parenthese<-match.arg(parenthese)

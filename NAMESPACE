@@ -25,12 +25,14 @@ export(nlar, mse, MAPE, selectSETAR, selectLSTAR, selectNNET,
 	setar, lstar, star, availableModels,
 	linear, isLinear, nnetTs, aar,
 	star, addRegime, 
-	TVAR, TVECM, TVAR.sim, TVAR.boot, TVECM.sim, TVAR.LRtest, TVECM.SeoTest, TVECM.HStest,
-	lineVar, VECM, VAR.sim, VAR.boot, VECM.sim, 
+	TVAR, TVECM, TVAR.sim, TVAR.boot, TVECM.sim, TVECM.boot,
+        TVAR.LRtest, TVECM.SeoTest, TVECM.HStest,
+	lineVar, VECM, VAR.sim, VAR.boot, VECM.sim, VECM.boot,
 	setar.sim, setarTest,
 	MakeThSpec, BBCTest, KapShinTest, resVar, extendBoot, regime, getTh,
 	fevd, irf, VARrep, VECM_symbolic, rank.select, lags.select, rank.test,
-	predict_rolling, accuracy_stat)
+	predict_rolling, accuracy_stat,
+	coefA, coefB, coefPI)
 S3method(extend, list)
 S3method(isLinear, lstar)
 S3method(toLatex, setar)
@@ -49,6 +51,8 @@ S3method(plot, TVECMHanSeo02Test)
 S3method(predict, nlar)
 S3method(predict, VAR)
 S3method(predict, VECM)
+S3method(predict, TVECM)
+S3method(predict, TVAR)
 S3method(print, nlar)
 S3method(toLatex, nlar)
 S3method(print, linear)
@@ -95,6 +99,8 @@ S3method(residuals, nlar)
 S3method(deviance, nlar)
 S3method(fitted, nlar)
 S3method(coef, nlar)
+S3method(coef, setar)
+S3method(coef, lstar)
 S3method(AIC, nlar)
 S3method(BIC, nlar)
 S3method(MAPE, nlar)
@@ -115,6 +121,8 @@ S3method(getTh, summary.setar)
 S3method(getTh, nlVar)
 S3method(logLik, nlVar)
 S3method(logLik, VECM)
+S3method(logLik, ca.jo)
+S3method(logLik, cajo.test)
 S3method(residuals, nlVar)
 S3method(deviance, nlVar)
 S3method(fitted, nlVar)
@@ -123,6 +131,7 @@ S3method(plot, llar)
 S3method(as.data.frame, llar)
 S3method(vcov, VAR)
 S3method(vcov, lstar)
+S3method(vcov, setar)
 S3method(confint, lstar)
 S3method(irf, nlVar)
 S3method(predict_rolling, nlVar)
@@ -134,5 +143,18 @@ S3method(VARrep, VECM)
 S3method(VARrep, VAR)
 S3method(accuracy_stat, pred_roll)
 S3method(accuracy_stat, default)
+
+S3method(coefA,VECM)
+S3method(coefA,ca.jo)
+S3method(coefA,cajo.test)
+S3method(coefA,list)
+S3method(coefB,VECM)
+S3method(coefB,ca.jo)
+S3method(coefB,cajo.test)
+S3method(coefB,list)
+S3method(coefPI,ca.jo)
+S3method(coefPI,cajo.test)
+S3method(coefPI,default)
+
 
 useDynLib(tsDyn)

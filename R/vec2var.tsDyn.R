@@ -55,9 +55,9 @@ VARrep.VECM <- function(object, ...) {
 
   if(lag>0){
     ## A_lag+1 matrix
-    Amat[,(1:k)+k*lag] <- -co[,grep(paste("-", lag, sep=""), colnames(co))]
+    Amat[,(1:k)+k*lag] <- -co[,grep(paste("-", lag, "$", sep=""), colnames(co))]
     ## A_lag+1 matrix
-    if(lag>1) for(i in 1:(lag-1)) Amat[,(1:k)+k*i] <- -(co[,grep(paste("-", i, sep=""), colnames(co))] -co[,grep(paste("-", i+1, sep=""), colnames(co))])
+    if(lag>1) for(i in 1:(lag-1)) Amat[,(1:k)+k*i] <- -(co[,grep(paste("-", i, "$", sep=""), colnames(co))] -co[,grep(paste("-", i+1, "$", sep=""), colnames(co))])
 
     cumulMat <- matrix(0, k,k)
     for(i in 1:lag) cumulMat <- cumulMat + Amat[,(1:k)+k*i]
@@ -124,9 +124,10 @@ VARrep.VAR <- function(object, ...) {
     comat[,(1:k)] <- diag(k)
 
     for(i in 1:lag){
-      comat[,(1:k)+k*(i-1)] <- comat[,(1:k)+k*(i-1)]+co[,grep(paste("-", i, sep=""), colnames(co))] 
+      comat[,(1:k)+k*(i-1)] <- comat[,(1:k)+k*(i-1)]+
+        co[,grep(paste("-", i, "$", sep=""), colnames(co))] 
 #       if(i>1){
-	comat[,(1:k)+k*i] <- -co[,grep(paste("-", i, sep=""), colnames(co))] 
+	comat[,(1:k)+k*i] <- -co[,grep(paste("-", i, "$", sep=""), colnames(co))] 
 #       }
     }
   ## names
@@ -244,6 +245,8 @@ predictOld.VECM <- function(object,...){
  predict(vec2var.tsDyn(object), ...)
 }
 
+#' @export irf
+#' @S3method irf nlVar
 irf.nlVar <- function(x, impulse=NULL, response=NULL, n.ahead=10, ortho=TRUE, cumulative=FALSE, boot=TRUE, ci=0.95, runs=100, seed=NULL, ...){
   model <- attr(x, "model")
   if(model=="VECM"){
@@ -254,7 +257,8 @@ irf.nlVar <- function(x, impulse=NULL, response=NULL, n.ahead=10, ortho=TRUE, cu
  irf(vec2var.tsDyn(x), impulse=impulse, response=response, n.ahead = n.ahead, ortho=ortho, cumulative=cumulative, boot=boot, ci=ci, runs=runs, seed=seed, ...)
 }
 
-
+#' @export fevd
+#' @S3method fevd nlVar
 fevd.nlVar <- function(x, n.ahead=10, ...){
   model <- attr(x, "model")
   if(model=="VECM"){
@@ -268,6 +272,7 @@ fevd.nlVar <- function(x, n.ahead=10, ...){
 
 ####### Predict 
 
+#' @S3method predict VAR
 predict.VAR <- function(object, newdata, n.ahead=5, ...){
   lag <- object$lag
   k <- object$k
@@ -303,7 +308,7 @@ predict.VAR <- function(object, newdata, n.ahead=5, ...){
   return(res)
 }
 
-
+#' @S3method predict VECM
 predict.VECM <- function(object, newdata, n.ahead=5, ...){
   lag <- object$lag
   k <- object$k
@@ -358,13 +363,13 @@ myHead <- function(x, n=6){
   res
 }
 
-myTail <- function(x, n=6){
+myTail <- function(x, n=6,...){
 
   if(inherits(x, "ts")){
-    res <-  apply(x,2,tail,n)
+    res <-  apply(x,2,tail,n,...)
     if(n==1) res <- matrix(res, nrow=1)
   } else {
-    res <-  tail(x,n) 
+    res <-  tail(x,n,...) 
   }
 
   res

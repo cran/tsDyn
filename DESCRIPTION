@@ -1,10 +1,10 @@
 Package: tsDyn
 Type: Package
-Title: Nonlinear time series models with regime switching
-Version: 0.9-41
-Date: 26/8/2014
-Authors@R: c(person("Antonio Fabio", "Di Narzo",role = c("aut", "cre")),
-             person("Jose Luis", "Aznarte",role = "ctb"),
+Title: Nonlinear Time Series Models with Regime Switching
+Version: 0.9-43
+Date: 2015-04-23
+Authors@R: c(person("Antonio Fabio", "Di Narzo", role = "aut"),
+             person("Jose Luis", "Aznarte", role = "ctb"),
              person("Matthieu", "Stigler", role = c("aut","cre"), email="Matthieu.Stigler@gmail.com"))
 Imports: mnormt, mgcv, nnet, tseriesChaos, tseries, utils, vars, urca,
         forecast, MASS, Matrix, foreach
@@ -14,10 +14,10 @@ Description: Implements nonlinear autoregressive (AR) time series models. For un
 License: GPL (>= 2)
 URL: http://github.com/MatthieuStigler/tsDyn/wiki
 MailingList: tsdyn@googlegroups.com
-Packaged: 2014-08-26 15:21:59 UTC; matifou
-Author: Antonio Fabio Di Narzo [aut, cre],
+NeedsCompilation: yes
+Packaged: 2015-04-24 00:13:36 UTC; matifou
+Author: Antonio Fabio Di Narzo [aut],
   Jose Luis Aznarte [ctb],
   Matthieu Stigler [aut, cre]
-NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2014-08-26 18:12:21
+Date/Publication: 2015-04-24 06:26:09

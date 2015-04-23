@@ -82,7 +82,8 @@ lapply(var_all_level , function(x) sapply(fevd(x, n.ahead=2), head))
 
 ## predict
 var_all_pred <- var_all[-grep("bo|no|adf|diff|Exo|l0", names(var_all))]
-lapply(var_all_pred, predict, n.ahead=2)
+var_all_pred2 <- var_all[-grep("adf|diff|Exo", names(var_all))]
+lapply(var_all_pred2, predict, n.ahead=2)
 lapply(var_all, function(x) try(predict(x, n.ahead=2), silent=TRUE))
 lapply(var_all_pred, function(x) sapply(tsDyn:::predictOld.VAR(x, n.ahead=2)$fcst, function(y) y[,"fcst"]))
 lapply(var_all, function(x) try(sapply(tsDyn:::predictOld.VAR(x, n.ahead=2)$fcst, function(y) y[,"fcst"]), silent=TRUE))
@@ -92,9 +93,29 @@ all.equal(lapply(var_all_pred, predict, n.ahead=2), lapply(var_all_pred, functio
 lapply(var_all_level , function(x) predict_rolling(x,nroll=2)$pred)
 lapply(var_all_level , function(x) predict_rolling(x,nroll=2, refit.every=1)$pred)
 
+## check "retro" predictions against fitted
+check.pred <- function(x){
+  true <- tail(fitted(x),1)
+  if(x$lag>0){
+    newD <- barry[nrow(barry)-(x$lag:1),,drop=FALSE] 
+    check <- predict(x, newdata=newD, newdataTrendStart=x$t, n.ahead=1)
+  } else {
+    check <- predict(x, n.ahead=1, newdataTrendStart=x$t)
+  }
+  
+  isTRUE(all.equal(true, check, check.attributes=FALSE))
+}
+sapply(var_all_pred2, check.pred)
+
+
 ## boot
 var_all_boot <- var_all[-grep("adf|diff|Exo|l0", names(var_all))]
 lapply(var_all_boot, function(x) tail(VAR.boot(x, seed=1234),2))
+checkBoot <- function(x){
+  check <- VAR.boot(x, boot.scheme="check")
+  all.equal(check, as.matrix(as.data.frame(barry)), check.attributes = FALSE)
+}
+sapply(var_all_boot, checkBoot)
 
 ## sim 
 comp_tvar_sim <- function(mod, serie){

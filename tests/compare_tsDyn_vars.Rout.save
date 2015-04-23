@@ -125,12 +125,7 @@ Loading required package: lmtest
 > print(sapply(all_models, comp_fitted)) 
 [1] TRUE TRUE TRUE TRUE TRUE TRUE
 > roundAll.Equal(sapply(all_models, comp_predict)) # 5 and 6
-[1] "TRUE"                                
-[2] "TRUE"                                
-[3] "TRUE"                                
-[4] "TRUE"                                
-[5] "Mean relative difference: 0.00741898"
-[6] "Mean relative difference: 0.00912046"
+[1] "TRUE" "TRUE" "TRUE" "TRUE" "TRUE" "TRUE"
 > lapply(sapply(all_models, comp_predictOld),roundAll.Equal, round=7) # 5 and 6
 [[1]]
 [1] "TRUE"
@@ -264,9 +259,9 @@ Loading required package: lmtest
 [4] "Mean relative difference: 0.0001395315"
 > sapply(all_var_models, comp_var_logLik, tol=lowlowtol)
 [1] TRUE TRUE TRUE TRUE
-> roundAll.Equal(sapply(all_var_models_noNoBo, comp_var_pred),4)
-[1] "TRUE"                             "Mean relative difference: 0.0115"
-[3] "TRUE"                             "Mean relative difference: 0.0164"
+> roundAll.Equal(sapply(all_var_models_noNoBo, comp_var_pred),7)
+[1] "TRUE"                              "Mean relative difference: 4e-07"  
+[3] "TRUE"                              "Mean relative difference: 1.5e-06"
 > roundAll.Equal(sapply(all_var_models_noNoBo, comp_var_predOld),7)
 [1] "TRUE"                                "Mean relative difference: 0.0118874"
 [3] "TRUE"                                "Mean relative difference: 0.0173923"

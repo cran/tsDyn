@@ -465,7 +465,10 @@ specific$allThSSR<-allThSSR#SSR values for all the th computed
 specific$Bnames<-Bnames
 specific$timeAttributes <- attributes(data[,1])
 
-z<-list(coefficients=Blist, coeffmat=Bbest, residuals=resbest, model=YnaX, nobs_regimes=nobs, k=k, t=t, T=T,nparB=nparbest, fitted.values=fitted, lag=lag, include=include,model.specific=specific, usedThVar=trans[,bestDelay], trim=trim)
+z<-list(coefficients=Blist, coeffmat=Bbest, residuals=resbest, model=YnaX, 
+        nobs_regimes=nobs, k=k, t=t, T=T,nparB=nparbest, df.residual=t-ncol(Bbest),
+        fitted.values=fitted, lag=lag, include=include,model.specific=specific, 
+        usedThVar=trans[,bestDelay], trim=trim)
 class(z)<-c("TVAR","nlVar")
 attr(z, "levelTransVar")<-model
 attr(z, "transVar")<-if(!missing(thVar)) "external" else "internal"
@@ -500,14 +503,15 @@ summary.TVAR<-function(object,...){
 	p<-x$lag
 	Z<-t(as.matrix(tail.matrix(x$model[,-c(1:k)],t)))
 	###Stdev, VarCov
-	Sigmabest<-matrix(1/x$t*crossprod(x$residuals),ncol=k)
-	SigmabestOls<-Sigmabest*(x$t/(x$t-ncol(x$coeffmat)))
-	VarCovB<-solve(tcrossprod(Z))%x%SigmabestOls
-	StDevB<-matrix(diag(VarCovB)^0.5, nrow=k)
+	SigmabestOls <- matrix(1/x$df.residual*crossprod(x$residuals),ncol=k)
+	VarCovB <- SigmabestOls %x% solve(tcrossprod(Z))
+	StDevB<-matrix(diag(VarCovB)^0.5, nrow=k, byrow=TRUE)
 	Tvalue<-x$coeffmat/StDevB
 	StDevB<-nameB(StDevB,commonInter=xspe$oneMatrix, Bnames=xspe$Bnames, nthresh=xspe$nthresh, npar=xspe$nrowB)
-	Pval<-pt(abs(Tvalue), df=(ncol(Z)-nrow(Z)), lower.tail=FALSE)+pt(-abs(Tvalue), df=(ncol(Z)-nrow(Z)), lower.tail=TRUE)
+	Pval <- 2* pt(abs(Tvalue), df=x$df.residual, lower.tail=FALSE)
 	Pval<-nameB(Pval,commonInter=xspe$oneMatrix, Bnames=xspe$Bnames, nthresh=xspe$nthresh, npar=xspe$nrowB)
+
+	## export results
 	x$coefficients<-asListIfMat(x$coefficients)
 	x$StDev<-asListIfMat(StDevB)
 	x$Pvalues<-asListIfMat(Pval)

@@ -57,6 +57,7 @@ names(var_all) <-c(
 ## Check methods:
 lapply(var_all, print)
 lapply(var_all, summary)
+lapply(var_all, function(x) summary(x)$coefMat)
 
 lapply(var_all, function(x) head(residuals(x), 3))
 lapply(var_all, function(x) head(fitted(x), 3))
@@ -69,6 +70,15 @@ sapply(var_all, AIC)
 sapply(var_all, AIC, fitMeasure="LL")
 sapply(var_all, BIC)
 sapply(var_all, BIC, fitMeasure="LL")
+
+## Misc
+sapply(var_all, df.residual)
+
+## vcov
+sapply(var_all, vcov)
+all(sapply(var_all, function(x) all.equal(summary(x)$coefMat[,2], sqrt(diag(vcov(x))))))
+var_all_withInt <- var_all[-grep("no|l0|diff", names(var_all))]
+all(sapply(var_all_withInt, function(x) all.equal(vcov(tsDyn:::toMlm.nlVar(summary(x))), vcov(x), check.attributes=FALSE)))
 
 ### VARrep
 var_all_noADF <- var_all[-grep("adf", names(var_all))]
@@ -86,7 +96,8 @@ var_all_pred2 <- var_all[-grep("adf|diff|Exo", names(var_all))]
 lapply(var_all_pred2, predict, n.ahead=2)
 lapply(var_all, function(x) try(predict(x, n.ahead=2), silent=TRUE))
 lapply(var_all_pred, function(x) sapply(tsDyn:::predictOld.VAR(x, n.ahead=2)$fcst, function(y) y[,"fcst"]))
-lapply(var_all, function(x) try(sapply(tsDyn:::predictOld.VAR(x, n.ahead=2)$fcst, function(y) y[,"fcst"]), silent=TRUE))
+prOld <- lapply(var_all, function(x) try(sapply(tsDyn:::predictOld.VAR(x, n.ahead=2)$fcst, function(y) y[,"fcst"]), silent=TRUE))
+prOld[sapply(prOld, function(x) !inherits(x, "try-error"))]
 
 all.equal(lapply(var_all_pred, predict, n.ahead=2), lapply(var_all_pred, function(x) sapply(tsDyn:::predictOld.VAR(x, n.ahead=2)$fcst, function(y) y[,"fcst"])), check.attributes=FALSE)
 

@@ -15,7 +15,8 @@
 #' @param block.size The block size when the block-bootstrap is used.
 #' @param boot1Zero Whether the first innovation for MC/bootstrap should be set
 #' to zero.
-#' @param \dots Currently not used.
+#' @param \dots Further arguments passed to the internal \sQuote{\code{oneStep}} function. 
+#' Mainly argument \sQuote{\code{thVar}} if an external threshold variable was provided
 #' 
 #' @details
 #' The forecasts are obtained recursively from the estimated model.  Given that
@@ -150,8 +151,7 @@ predict.nlar <- function(object, newdata, n.ahead=1, type=c("naive", "MC", "boot
 #### Predict TVECM/TVAR
 #' @S3method predict TVECM
 predict.TVECM <- function(object, ...) stop("predict() not available for TVECM")
-#' @S3method predict TVAR
-predict.TVAR <- function(object, ...) stop("predict() not available for TVAR")
+
 
 #### Small function to sample in block: sample.block 
 sample.block <- function(x, size=length(x), block.size=2){

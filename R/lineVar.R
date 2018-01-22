@@ -27,9 +27,10 @@
 #'@param I For VAR only: whether in the VAR the variables are to be taken in
 #'levels (original series) or in difference, or similarly to the univariate ADF
 #'case.
-#'@param beta for VECM only: imposed cointegrating value. If null, will be estimated
+#'@param beta for VECM only: user-specified cointegrating value. 
+#'If NULL, will be estimated using the estimator specified in \code{estim}
 #'@param LRinclude Possibility to include in the long-run relationship and the
-#'ECT trend, constant... Can also be a matrix with exogeneous regressors
+#'ECT a trend, a, constant, etc. Can also be a matrix with exogeneous regressors
 #'@param estim Type of estimator for the VECM: '2OLS' for the two-step approach
 #'or 'ML' for Johansen MLE
 #'@param exogen Inclusion of exogenous variables (first row being first=oldest
@@ -37,8 +38,8 @@
 #'end-sample.
 #'@return Fitted model data
 #'@author Matthieu Stigler
-#'@seealso \code{\link{VECM}} which is just a wrapper for
-#'\code{lineVar(...,model="VECM")}
+#'@seealso \code{\link{VECM}} which is just a wrapper for \code{lineVar(..., model="VECM")}. 
+#'Methods \code{\link{predict.VAR}}, \code{\link{VARrep}}, \code{\link{regime}}, \code{\link{irf}} and \code{\link{toLatex}}.
 #'
 #'\code{\link{TVAR}} and \code{\link{TVECM}} for the corresponding threshold
 #'models. \code{\link{linear}} for the univariate AR model.
@@ -262,7 +263,7 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
       ve<-Re(eig$vectors)
       va<-Re(eig$values)
       #normalize eigenvectors
-      ve_no<-apply(ve,2, function(x) x/sqrt(t(x)%*%S11%*%x))
+      ve_no<-apply(ve,2, function(x) x/c(sqrt(t(x)%*%S11%*%x)))
       ve_2<-t(t(ve_no)/diag(ve_no)) 
       ve_3<-ve_2[,1:r, drop=FALSE]
       ## Phillips triangular normalisation (Juselius (2006, p. 216))
@@ -431,8 +432,9 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 #' @param lag Number of lags (in the VECM representation, see Details)
 #' @param r Number of cointegrating relationships
 #' @param include Type of deterministic regressors to include
-#' @param beta for VECM only: imposed cointegrating value. If null, will be estimated
-#'so values will be estimated
+#'@param beta for VECM only: user-specified cointegrating values, the cointegrating vector will be
+#' taken as: (1, -\code{beta})
+#'If NULL, will be estimated using the estimator specified in \code{estim}
 #'@param LRinclude Type of deterministic regressors to include in the long-term
 #'relationship. Can also be a matrix with exogeneous regressors (2OLS only).
 #'@param estim Type of estimator: \code{2OLS} for the two-step approach or
@@ -456,7 +458,7 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 #' Hamilton (1994) Time Series Analysis, Princeton University Press
 #' 
 #' Juselius (2006) The Cointegrated VAR model, Oxford University Press
-#'@seealso \code{\link{coefA}}, \code{\link{coefB}} and \code{\link{coefPi}} 
+#'@seealso \code{\link{coefA}}, \code{\link{coefB}} and \code{\link{coefPI}} 
 #'to extract the relevant parameter matrices. 
 #'
 #'\code{\link{lineVar}} \code{\link{TVAR}} and \code{\link{TVECM}} for

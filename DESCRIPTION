@@ -1,8 +1,8 @@
 Package: tsDyn
 Type: Package
 Title: Nonlinear Time Series Models with Regime Switching
-Version: 0.9-46
-Date: 2018-01-21
+Version: 0.9-48
+Date: 2018-05-20
 Authors@R: c(person("Antonio Fabio", "Di Narzo", role = "aut"),
              person("Jose Luis", "Aznarte", role = "ctb"),
              person("Matthieu", "Stigler", role = c("aut","cre"), email="Matthieu.Stigler@gmail.com"))
@@ -17,9 +17,9 @@ URL: http://github.com/MatthieuStigler/tsDyn/wiki
 MailingList: tsdyn@googlegroups.com
 RoxygenNote: 6.0.1
 NeedsCompilation: yes
-Packaged: 2018-01-22 00:26:15 UTC; matifou
+Packaged: 2018-05-20 22:28:25 UTC; matifou
 Author: Antonio Fabio Di Narzo [aut],
   Jose Luis Aznarte [ctb],
   Matthieu Stigler [aut, cre]
 Repository: CRAN
-Date/Publication: 2018-01-22 19:41:29 UTC
+Date/Publication: 2018-06-03 21:12:51 UTC

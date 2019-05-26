@@ -1,5 +1,5 @@
 0636e73ff0215e8d672dc4c32c317bb3 *COPYING
-ab9bed5ee7b1e8ab852290c2e1c0e5f5 *DESCRIPTION
+453dfa6e15a2eee07435ba972a544056 *DESCRIPTION
 08b0a3878f423ee6bd6120127d4b9add *NAMESPACE
 ebfbf0a6a691c7454013ed75aafd583a *R/BBCtest.R
 02922d6e50e497c5e576baf3cfe34798 *R/KapShinTest.R
@@ -8,7 +8,7 @@ c86c3e676a40ccc0cd3bef0c9bb4f476 *R/TVAR_LRtest.R
 023201632b1fc5f77e2e8b329777b996 *R/TVARestim.R
 05858a72e330561b56c197c4b7a325cf *R/TVECM.HStest.R
 a7676a74219369474365094d38604e97 *R/TVECM.R
-2bdd6cbb6d8688dd7689fa5fb0707451 *R/TVECM.sim.R
+23dab9069b0042149eccb9eeed67a7e6 *R/TVECM.sim.R
 7034f4751dd18982cd4982fd881d0188 *R/TVECMSeoTest.R
 0aef30832137f4f14b9c9cf3866cbf53 *R/VAR.sim.R
 f5afa8fb595ec55dbcb5daf3a2cb1ace *R/VECM_symbolic.R
@@ -48,7 +48,7 @@ c1aba0d617272088474b24c1f7c0b69c *R/setarTest.R
 1c6137b2194d87d15732b9c9445b028c *R/vcov.R
 e866a4b7d07f33cdfb19a27e9bd7b170 *R/vec2var.tsDyn.R
 fbc5b85566d9d14cf7d2d104215c8bae *R/zzz.R
-a2f7e506055639ed9188c89f49a57471 *build/vignette.rds
+b264f149d6ff609b34fb5181cf174f23 *build/vignette.rds
 9c833e5e813ebde0889883d5e7ceb879 *data/IIPUs.rda
 85a73ec0545bf92e8985ad67ec14537e *data/UsUnemp.rda
 5df23ec263560b04a4d258d6e1883656 *data/barry.rda
@@ -58,10 +58,10 @@ a2f7e506055639ed9188c89f49a57471 *build/vignette.rds
 b9a1ea678b788db019e4be138870d99f *inst/ChangeLog
 a1d24c6a729ae7f452453afc0ec4fa54 *inst/doc/ThCointOverview.R
 ce37de66947676dbac7747de368e57b6 *inst/doc/ThCointOverview.Rnw
-8e2d39c3d46fcd992e3748f99a3f9476 *inst/doc/ThCointOverview.pdf
+25f9b0293e50da92645e8df0b9766f51 *inst/doc/ThCointOverview.pdf
 6b94ec0be529de5108809f4eab737473 *inst/doc/tsDyn.R
 e7e61d5553f4e037320d129099a4a145 *inst/doc/tsDyn.Stex
-281fb936aeeca11fbdecf3d284863019 *inst/doc/tsDyn.pdf
+93834abb33c73e3085df72a7ab69d3fd *inst/doc/tsDyn.pdf
 d3608a5e72e170d42c34986d96b5b43c *inst/tsDyn-design.Stex
 ef5f074e5e920e7c75bd71441c96e555 *man/BBCTest.Rd
 92d7abddd38b372c2e66d9d22896e9af *man/DataIIPUs.Rd
@@ -140,11 +140,11 @@ d82e488bfd136b614c9e632c5c3ae7ef *tests/00SetarAndFriends.Rout.save
 6cf2b4624a2ce7d048cce420f48cbf91 *tests/TVAR.R
 6e692195575f186e333ff6d65b4d8f25 *tests/TVAR.Rout.save
 c5f42c61472142c9edfc83c27f548b72 *tests/TVECM.sim.R
-c19fcfd1b15f17e358da52716158e635 *tests/TVECM.sim.Rout.save
+89af2ffe3b7693cff1ac6c659122c6f1 *tests/TVECM.sim.Rout.save
 19fc6ab05b8248e3e0fe95205b235103 *tests/TVECM_HSTEST.R
-25597b44faf26dbe2d9017fbc776b0a4 *tests/TVECM_HSTEST.Rout.save
+2381e2e11b81273ba817e18f310a4c8d *tests/TVECM_HSTEST.Rout.save
 b982d2faeae5a0da88ddeb322513c0a2 *tests/VAR.R
-134dd00c36e0c651ff1f33f79fd2ceba *tests/VAR.Rout.save
+f0b960e5d4b2854c4135c7737ec25779 *tests/VAR.Rout.save
 0e5f7afe072b3c7ae94bbd295e97b0e6 *tests/VECM.R
 1ab06e8ca5241251fb865761f3c4ab4e *tests/VECM.Rout.save
 d6594de7897ba950792b18a81d256803 *tests/compare_tsDyn_vars.R

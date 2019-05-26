@@ -1,13 +1,11 @@
 
-R version 3.5.0 (2018-04-23) -- "Joy in Playing"
-Copyright (C) 2018 The R Foundation for Statistical Computing
+R version 3.6.0 Patched (2019-05-24 r76598) -- "Planting of a Tree"
+Copyright (C) 2019 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
-
-  Natural language support but running in an English locale
 
 R is a collaborative project with many contributors.
 Type 'contributors()' for more information and
@@ -111,13 +109,13 @@ Equation long.run  0.9575983 1.5929831     0      0.8703592    0.02252604
 Equation short.run 0.001291099  0.004290751     0    -0.02328976    0.06741675
 Equation long.run  0.058816293 -0.007954949     0     0.16032265    0.14668443
 > head(tv_1_boot)
-      [,1]   [,2]
-[1,] 2.183  1.575
-[2,] 2.246  1.545
-[3,] 2.237  1.403
-[4,] 1.610  0.940
-[5,] 1.441  0.650
-[6,] 0.697 -0.067
+      [,1]  [,2]
+[1,] 2.183 1.575
+[2,] 2.246 1.545
+[3,] 2.325 1.573
+[4,] 2.332 1.628
+[5,] 2.393 1.536
+[6,] 2.303 1.612
 > 
 > ##Check the bootstrap
 > all.equal(TVECM.sim(TVECMobject=TVECMobject,type="check"), as.matrix(dat), check.attributes=FALSE)
@@ -133,13 +131,13 @@ Equ x2: 0.9575983 1.5929831         0    0.8703592   0.02252604 0.058816293
 Equ x1:  0.004290751         0  -0.02328976   0.06741675
 Equ x2: -0.007954949         0   0.16032265   0.14668443
 > head(tv_1_boot)
-      [,1]   [,2]
-[1,] 2.183  1.575
-[2,] 2.246  1.545
-[3,] 2.237  1.403
-[4,] 1.610  0.940
-[5,] 1.441  0.650
-[6,] 0.697 -0.067
+      [,1]  [,2]
+[1,] 2.183 1.575
+[2,] 2.246 1.545
+[3,] 2.325 1.573
+[4,] 2.332 1.628
+[5,] 2.393 1.536
+[6,] 2.303 1.612
 > 
 > tv_1_sim <-TVECM.sim(B=tsDyn:::coefMat.nlVar(TVECMobject),type="simul", 
 +                      beta=TVECMobject$model.specific$beta,
@@ -151,13 +149,13 @@ Equ x2: 0.9575983 1.5929831         0    0.8703592   0.02252604 0.058816293
 Equ x1:  0.004290751         0  -0.02328976   0.06741675
 Equ x2: -0.007954949         0   0.16032265   0.14668443
 > head(tv_1_boot)
-      [,1]   [,2]
-[1,] 2.183  1.575
-[2,] 2.246  1.545
-[3,] 2.237  1.403
-[4,] 1.610  0.940
-[5,] 1.441  0.650
-[6,] 0.697 -0.067
+      [,1]  [,2]
+[1,] 2.183 1.575
+[2,] 2.246 1.545
+[3,] 2.325 1.573
+[4,] 2.332 1.628
+[5,] 2.393 1.536
+[6,] 2.303 1.612
 > 
 > ##Bootstrap a TVAR with two threshold (three regimes)
 > tv_2_const <- TVECM(dat, lag=1, nthresh=2, plot=FALSE, trace=FALSE, th1=list(exact=-1.312),
@@ -187,9 +185,9 @@ Equation long.run   0.10732160 -0.09079342     0     0.08524092   -0.02873180
       [,1]  [,2]
 [1,] 2.183 1.575
 [2,] 2.246 1.545
-[3,] 2.256 1.665
-[4,] 2.289 1.701
-[5,] 2.151 1.413
+[3,] 1.570 0.474
+[4,] 1.813 0.465
+[5,] 1.694 0.351
 > TVECM.sim(TVECMobject=tv_2_none, type="boot", show.parMat=TRUE, seed=456)[1:5,]
                            ECT Const Trend short.run t -1 long.run t -1
 Equation short.run -0.03252245     0     0      0.3508268    -0.2229371
@@ -203,9 +201,9 @@ Equation long.run  0.061539636     0     0     0.01649033     0.1198955
       [,1]  [,2]
 [1,] 2.183 1.575
 [2,] 2.246 1.545
-[3,] 2.229 1.599
-[4,] 2.254 1.610
-[5,] 2.199 1.570
+[3,] 1.563 0.447
+[4,] 1.761 0.335
+[5,] 1.624 0.186
 > TVECM.sim(TVECMobject=tv_2_trend, type="boot", show.parMat=TRUE, seed=456)[1:5,]
                          ECT Const       Trend short.run t -1 long.run t -1
 Equation short.run 0.3391893     0 0.002350986     0.07245793   -0.05503711
@@ -222,9 +220,9 @@ Equation long.run    -0.02692949
       [,1]  [,2]
 [1,] 2.183 1.575
 [2,] 2.246 1.545
-[3,] 2.251 1.638
-[4,] 2.273 1.657
-[5,] 2.134 1.377
+[3,] 1.571 0.495
+[4,] 1.876 0.808
+[5,] 1.842 0.910
 Warning message:
 In TVECM.sim(TVECMobject = tv_2_trend, type = "boot", show.parMat = TRUE,  :
   Accuracy of function (tested with arg type=check) is not good when arg include= trend  is given
@@ -245,9 +243,9 @@ Equation long.run  -1.475473e-04     0.07572181   -0.02512837
       [,1]  [,2]
 [1,] 2.183 1.575
 [2,] 2.246 1.545
-[3,] 2.265 1.629
-[4,] 2.303 1.670
-[5,] 2.167 1.409
+[3,] 1.596 0.476
+[4,] 1.854 0.536
+[5,] 1.737 0.421
 Warning message:
 In TVECM.sim(TVECMobject = tv_2_both, type = "boot", show.parMat = TRUE,  :
   Accuracy of function (tested with arg type=check) is not good when arg include= both  is given
@@ -300,9 +298,9 @@ Equation cpiCAN -0.0224027426
        [,1]    [,2]    [,3]
 [1,] 0.9993 27.9800 25.8600
 [2,] 0.9956 28.1700 26.0000
-[3,] 0.9837 28.4766 25.9924
-[4,] 1.0075 28.8608 25.3569
-[5,] 1.0154 28.9239 25.5003
+[3,] 0.9971 28.4842 26.5000
+[4,] 0.9868 28.7499 26.6460
+[5,] 1.0020 28.9156 26.7902
 > 
 > ve_r1_l3 <- VECM(barry, lag=3)
 > tsDyn:::check.VECM.boot(ve_r1_l3)
@@ -325,7 +323,7 @@ Equation cpiCAN  0.022337674  0.1324489696
 [2,] 0.9956 28.1700 26.0000
 [3,] 0.9967 28.4400 26.0700
 [4,] 1.0007 28.6300 26.3600
-[5,] 0.9916 28.9337 26.3204
+[5,] 1.0103 28.7882 26.8608
 > 
 > ve_r2_l3 <- VECM(barry, lag=3, estim="ML", r=2)
 > tsDyn:::check.VECM.boot(ve_r2_l3)
@@ -348,7 +346,7 @@ Equation cpiCAN  0.166485918 -0.68004445  0.0141090720  0.1337360507
 [2,] 0.9956 28.1700 26.0000
 [3,] 0.9967 28.4400 26.0700
 [4,] 1.0007 28.6300 26.3600
-[5,] 0.9939 28.9469 26.3474
+[5,] 1.0110 28.7965 26.8932
 > 
 > ################################################################
 > ######### Check error message when matrix badly specified:
@@ -479,4 +477,4 @@ Error in TVECM.sim(B = B, beta = 1, nthresh = 2, Thresh = 0, n = 100,  :
 > 
 > proc.time()
    user  system elapsed 
-  2.055   0.075   2.118 
+  5.090   0.307   5.427 

@@ -1,14 +1,11 @@
 
-R version 2.15.2 (2012-10-26) -- "Trick or Treat"
-Copyright (C) 2012 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
+R version 3.6.0 Patched (2019-05-24 r76598) -- "Planting of a Tree"
+Copyright (C) 2019 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
-
-  Natural language support but running in an English locale
 
 R is a collaborative project with many contributors.
 Type 'contributors()' for more information and
@@ -6397,43 +6394,43 @@ var_l3_tr var_l3_bo var_l3_no
 > lapply(var_all_boot, function(x) tail(VAR.boot(x, seed=1234),2))
 $var_l1_co
          dolcan   cpiUSA   cpiCAN
-[323,] 1.442404 113.8773 110.2911
-[324,] 1.445671 114.0330 110.5575
+[323,] 1.337703 115.7398 111.0366
+[324,] 1.348885 115.7932 110.9218
 
 $var_l1_tr
-         dolcan   cpiUSA   cpiCAN
-[323,] 1.190547 106.7203 105.8532
-[324,] 1.190733 106.7581 105.9781
+          dolcan   cpiUSA   cpiCAN
+[323,] 0.7177345 84.89318 78.15398
+[324,] 0.7220352 84.61039 77.67406
 
 $var_l1_bo
-         dolcan  cpiUSA   cpiCAN
-[323,] 1.483350 114.656 109.2615
-[324,] 1.486668 114.807 109.5075
+         dolcan   cpiUSA   cpiCAN
+[323,] 1.360110 115.4049 113.6621
+[324,] 1.369254 115.4442 113.5506
 
 $var_l1_no
-         dolcan   cpiUSA   cpiCAN
-[323,] 1.238563 104.0766 101.5310
-[324,] 1.240809 104.1735 101.7416
+          dolcan   cpiUSA   cpiCAN
+[323,] 0.8276773 93.62994 91.44788
+[324,] 0.8337395 93.45117 91.12680
 
 $var_l3_co
          dolcan   cpiUSA   cpiCAN
-[323,] 1.598671 113.2035 108.8799
-[324,] 1.602465 113.1174 109.1044
+[323,] 1.369392 110.9067 115.2037
+[324,] 1.360000 110.9443 115.2534
 
 $var_l3_tr
-         dolcan   cpiUSA   cpiCAN
-[323,] 1.751907 125.1645 127.1487
-[324,] 1.760639 125.2012 127.5524
+          dolcan   cpiUSA   cpiCAN
+[323,] 0.5914886 80.78665 80.67760
+[324,] 0.5767438 80.53620 80.27936
 
 $var_l3_bo
          dolcan   cpiUSA   cpiCAN
-[323,] 1.433351 113.7595 116.2260
-[324,] 1.439578 113.6766 116.5056
+[323,] 1.415711 111.6967 110.0494
+[324,] 1.408091 111.7374 110.0529
 
 $var_l3_no
-         dolcan   cpiUSA   cpiCAN
-[323,] 1.675683 110.2168 105.3033
-[324,] 1.681117 110.2065 105.6054
+          dolcan   cpiUSA   cpiCAN
+[323,] 0.8968509 86.66643 91.49379
+[324,] 0.8890134 86.61438 91.44234
 
 > checkBoot <- function(x){
 +   check <- VAR.boot(x, boot.scheme="check")
@@ -6612,5 +6609,5 @@ $var_l3_no
 > 
 > 
 > proc.time()
-utilisateur     système      écoulé 
-      3.040       0.288       3.321 
+   user  system elapsed 
+  5.695   0.371   6.092 

@@ -309,7 +309,7 @@ Yb[1:(p+1),]<-y[1:(p+1),]
 trend<-c(rep(NA, T-t),1:t)
 
 #resampling/ simulation of residual/innovations
-if(type=="simul"&&dim(innov)!=c(n,k))
+if(type=="simul" && any(dim(innov)!=c(n,k)))
   stop(paste("input innov is not of right dim, should be matrix with", n,"rows and ", k, "cols\n"))
 if(!missing(seed)) set.seed(seed)
 resids<-switch(type, "boot"=res[sample(seq_len(t), replace=TRUE),], "simul"= innov, "check"=res)

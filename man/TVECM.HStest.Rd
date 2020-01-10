@@ -2,12 +2,12 @@
 \alias{TVECM.HStest }
 \title{Test of linear cointegration vs threshold cointegration}
 \description{
-Tests the null of linear cointegration against threshold cointegration following Hansen and Seo (2002). Fixed regressor and residual bootstrap are available. 
+Tests the null of linear cointegration against threshold cointegration following Hansen and Seo (2002). Fixed regressor and residual bootstrap are available.
 }
 \usage{
-TVECM.HStest(data, lag=1, ngridTh=300, trim=0.05, 
- nboot=100, fixed.beta=NULL,  intercept=TRUE, 
- boot.type=c("FixedReg", "ResBoot"), 
+TVECM.HStest(data, lag=1, ngridTh=300, trim=0.05,
+ nboot=100, fixed.beta=NULL,  intercept=TRUE,
+ boot.type=c("FixedReg", "ResBoot"),
  hpc=c("none", "foreach"))
 }
 
@@ -17,7 +17,7 @@ TVECM.HStest(data, lag=1, ngridTh=300, trim=0.05,
 \item{ngridTh}{Number of threshold grid points to evaluate the optimal threshold.}
 \item{trim}{Trimming parameter indicating the minimal percentage of observations in each regime}
 \item{nboot}{Number of bootstrap replications}
-\item{fixed.beta}{Numeric. User pre-specified cointegrating value, as in \code{\link{VECM}} 
+\item{fixed.beta}{Numeric. User pre-specified cointegrating value, as in \code{\link{VECM}}
 (i.e. cointegrating  vector will be c(1, \code{-beta.fixed})). When NULL (default), the value is estimated from the linear VECM.}
 \item{intercept}{Logical. Whether an intercept has to be included in the VECM}
 \item{boot.type}{Character. Type of bootstrap simulation (only if \code{nboot}>0)}
@@ -25,13 +25,13 @@ TVECM.HStest(data, lag=1, ngridTh=300, trim=0.05,
 }
 
 \details{
-This test follows the implementation done by Hansen and Seo (2002). The cointegrating value is estimated from the linear VECM. Then, conditional on this value, the LM test is run for a range of different threshold values. The maximum of those LM test values is reported. 
+This test follows the implementation done by Hansen and Seo (2002). The cointegrating value is estimated from the linear VECM. Then, conditional on this value, the LM test is run for a range of different threshold values. The maximum of those LM test values is reported.
 
-Two bootstrap are available: a fixed regressor, as well as a usual residual bootstrap (using the function \code{\link{TVECM.sim}}). 
+Two bootstrap are available: a fixed regressor, as well as a usual residual bootstrap (using the function \code{\link{TVECM.sim}}).
 
-Available methods are \code{print()}, \code{summary()} and \code{plot()}. 
+Available methods are \code{print()}, \code{summary()} and \code{plot()}.
 
-With the argument \code{hpc}, the burdensome bootstrap replication can be run on parallel cores, thus alleviating the time of computation. The user needs simply to choose a package (among doMC, doMPI, doSNOW or doRedis) and register the backend. See the vignette for more details. 
+With the argument \code{hpc}, the burdensome bootstrap replication can be run on parallel cores, thus alleviating the time of computation. The user needs simply to choose a package (among doMC, doMPI, doSNOW or doRedis) and register the backend. See the vignette for more details.
 }
 
 \value{A list cointaining diverse values:
@@ -42,16 +42,16 @@ With the argument \code{hpc}, the burdensome bootstrap replication can be run on
 \item{allBoots}{The boot sup-LM values}
 \item{args}{Some user given args (nboot, boot.type)}
 }
-\section{Reproducibility}{Comparison with original paper is made difficult as values of the test are not shown in the paper, only their critical values, which depend on random bootstrap. 
+\section{Reproducibility}{Comparison with original paper is made difficult as values of the test are not shown in the paper, only their critical values, which depend on random bootstrap.
 
-Comparison is done with the GAUSS code available on the page of Bruce Hansen. Running tar_ci, we have the same sup-LM value when lags=1 and lags=2, a higher value with lag=3. When the test is run with pre-specified beta values, we have different results, sometimes higher but also smaller sup-LM value. 
+Comparison is done with the GAUSS code available on the page of Bruce Hansen. Running tar_ci, we have the same sup-LM value when lags=1 and lags=2, a higher value with lag=3. When the test is run with pre-specified beta values, we have different results, sometimes higher but also smaller sup-LM value.
 }
 \seealso{
-\code{\link{zeroyld}}: data used in the original paper of Hansen and Seo. 
+\code{\link{zeroyld}}: data used in the original paper of Hansen and Seo.
 
-\code{\link{TVECM.SeoTest}}: a similar test, but with null hypothesis of no-cointegration. 
+\code{\link{TVECM.SeoTest}}: a similar test, but with null hypothesis of no-cointegration.
 
-\code{\link{TVECM}} for estimating a TVECM, \code{\link{TVECM.sim}} for simulating/bootstrap a TVECM, 
+\code{\link{TVECM}} for estimating a TVECM, \code{\link{TVECM.sim}} for simulating/bootstrap a TVECM,
 }
 
 
@@ -64,7 +64,7 @@ Hansen, B. and Seo, B. (2002), Testing for two-regime threshold cointegration in
 #Use original data from paper:
 data(zeroyld)
 dataPaper<-zeroyld
-# Test: nboot, number of bootstrap replications, should be high 
+# Test: nboot, number of bootstrap replications, should be high
 \dontrun{
 test1<-TVECM.HStest(dataPaper, lag=1, intercept=TRUE, nboot=1000)
 }
@@ -72,8 +72,8 @@ test1<-TVECM.HStest(dataPaper, lag=1, intercept=TRUE, nboot=1000)
 #we use here for the example a much smaller number of bootstrap:
 test1<-TVECM.HStest(dataPaper, lag=1, intercept=TRUE, nboot=10)
 
-test1
-summary(test1)
+#test1
+#summary(test1)
 plot(test1)
 
 #can have only specific plots:

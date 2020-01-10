@@ -87,10 +87,9 @@ given delay, is there rather to check the consistency of the method nthresh=2
 
 data(zeroyld)
 
-tv <- TVAR(zeroyld, lag=2, nthresh=2, thDelay=1, trim=0.1, mTh=1, plot=FALSE)
+tv <- TVAR(zeroyld, lag=2, nthresh=1, thDelay=1, trim=0.1, mTh=1, plot=FALSE)
 
 print(tv)
-summary(tv)
 
 # a few useful methods:
 plot(tv)

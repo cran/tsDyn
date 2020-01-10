@@ -48,7 +48,7 @@ Estimate a VECM by either Engle-Granger (2OLS) or Johansen (MLE) method.
 This function is just a wrapper for the \code{\link{lineVar}}, with
 model="VECM".
 
-More comprehensive functions for VECM are in package \pkg{vars}. 
+More comprehensive functions for VECM are in package \pkg{vars}.
 Differences with that package are: \describe{ \item{Engle-Granger
 estimator}{The Engle-Granger estimator is available}
 \item{Presentation}{Results are printed in a different ways, using a matrix
@@ -73,14 +73,14 @@ The lag can be set to 0, although some methods (irf, fevd) won't work for this c
 
 #'The arg \code{beta} allows to specify constrained cointegrating values, leading to
 \eqn{ECT= \beta^{'}X_{t-1}}. It should be specified as a \eqn{K \times r} matrix. In case of
-\eqn{r=1}, can also be specified as a vector. Note that the vector should be normalised, 
-with the first value to 1, and the next values showing the opposite sign in the long-run relationship \eqn{- \beta}. 
-In case the vector has \eqn{K-1} values, this is what \code{lineVar} is doing, setting \eqn{(1, - \beta)}. 
+\eqn{r=1}, can also be specified as a vector. Note that the vector should be normalised,
+with the first value to 1, and the next values showing the opposite sign in the long-run relationship \eqn{- \beta}.
+In case the vector has \eqn{K-1} values, this is what \code{lineVar} is doing, setting \eqn{(1, - \beta)}.
 Note finally one should provide values for all
-the coefficients (eventually except for special case of r=1 and k-1), if you want to provide only part of the 
+the coefficients (eventually except for special case of r=1 and k-1), if you want to provide only part of the
 parameters, and let the others be estimated, look at the functions in package urca.
 
-The eigenvector matrix \eqn{\beta} is normalised using the Phillips triangular representation, 
+The eigenvector matrix \eqn{\beta} is normalised using the Phillips triangular representation,
 see Hamilton (1994, p. 576) and Juselius (2006, p. 216), see \code{\link{coefA}} for more details.
 }
 \examples{
@@ -98,21 +98,21 @@ vecm.jo<-VECM(zeroyld, lag=2, estim="ML")
 if(require(vars)) {
  data(finland)
  #check long coint values
-   all.equal(VECM(finland, lag=2, estim="ML", r=2)$model.specific$beta, 
+   all.equal(VECM(finland, lag=2, estim="ML", r=2)$model.specific$beta,
              cajorls(ca.jo(finland, K=3, spec="transitory"), r=2)  $beta, check.attributes=FALSE)
 # check OLS parameters
-  all.equal(t(coefficients(VECM(finland, lag=2, estim="ML", r=2))), 
+  all.equal(t(coefficients(VECM(finland, lag=2, estim="ML", r=2))),
     coefficients(cajorls(ca.jo(finland, K=3, spec="transitory"), r=2)$rlm), check.attributes=FALSE)
 
 }
 
 
 ##export to Latex
-toLatex(vecm.eg)
-toLatex(summary(vecm.eg))
-options("show.signif.stars"=FALSE)
-toLatex(summary(vecm.eg), parenthese="Pvalue")
-options("show.signif.stars"=TRUE)
+#toLatex(vecm.eg)
+#toLatex(summary(vecm.eg))
+#options("show.signif.stars"=FALSE)
+#toLatex(summary(vecm.eg), parenthese="Pvalue")
+#options("show.signif.stars"=TRUE)
 
 
 
@@ -123,8 +123,8 @@ Hamilton (1994) Time Series Analysis, Princeton University Press
 Juselius (2006) The Cointegrated VAR model, Oxford University Press
 }
 \seealso{
-\code{\link{coefA}}, \code{\link{coefB}} and \code{\link{coefPI}} 
-to extract the relevant parameter matrices. 
+\code{\link{coefA}}, \code{\link{coefB}} and \code{\link{coefPI}}
+to extract the relevant parameter matrices.
 
 \code{\link{lineVar}} \code{\link{TVAR}} and \code{\link{TVECM}} for
 the correspoding threshold models. \code{\link{linear}} for the univariate AR

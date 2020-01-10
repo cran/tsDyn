@@ -59,10 +59,10 @@ to be useful to select simultaneously the rank and the lags, see references.
 
 data(barry)
 
-# 
+#
 rk_sel <- rank.select(barry)
 rk_sel
-summary(rk_sel)
+#summary(rk_sel)
 
 
 }

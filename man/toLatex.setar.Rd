@@ -22,7 +22,7 @@ Produce LaTeX output of the SETAR model.
 \examples{
 
 mod.setar <- setar(log10(lynx), m=2, thDelay=1, th=3.25)
-toLatex(mod.setar)
+#toLatex(mod.setar)
 
 }
 \seealso{

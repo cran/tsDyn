@@ -88,8 +88,8 @@ Fomby (1997).
 The grid for the threshold parameters can be set in different ways, through
 the argument \var{th1}, \var{th2} and \var{beta}:
 
-\describe{ 
-\item{exact:}{Pre-specified value (for beta: cointegrating vector will be c(1,\code{-beta}))} 
+\describe{
+\item{exact:}{Pre-specified value (for beta: cointegrating vector will be c(1,\code{-beta}))}
 \item{int:}{Specify an interval (of length \var{ngridTh}) in which to search.}
 \item{around:}{Specify to take \var{ngridTh} points around the value given. }
 }
@@ -110,8 +110,8 @@ data(zeroyld)
 
 tvec <- TVECM(zeroyld, nthresh=2,lag=1, ngridBeta=20, ngridTh=30, plot=TRUE,trim=0.05, common="All")
 
-print(tvec)
-summary(tvec)
+#print(tvec)
+#summary(tvec)
 
 #Obtain diverse infos:
 AIC(tvec)
@@ -120,7 +120,7 @@ BIC(tvec)
 res.tvec<-residuals(tvec)
 
 #export the equations as Latex:
-toLatex(tvec)
+#toLatex(tvec)
 
 }
 \references{

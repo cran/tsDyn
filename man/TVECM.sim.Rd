@@ -51,7 +51,7 @@ understand how to give right input}
 
 \item{seed}{Optional. Seed for the random number generation.}
 
-\item{check}{When performing a bootstrap replication, check if taking original residuals (instead of resampled) 
+\item{check}{When performing a bootstrap replication, check if taking original residuals (instead of resampled)
 leads to the original data.}
 
 \item{TVECMobject, VECMobject}{Object computed by function \code{\link{TVECM}}
@@ -107,8 +107,8 @@ internally \code{\link{TVECM}}.
 \examples{
 
 
-###reproduce example in Enders (2004, 2 edition) p. 350, 
-# (similar example in Enders (2010, 3 edition) 301-302). 
+###reproduce example in Enders (2004, 2 edition) p. 350,
+# (similar example in Enders (2010, 3 edition) 301-302).
 
 if(require(mnormt)){
 #see that the full "VAR" coefficient matrix is:
@@ -121,7 +121,7 @@ if(require(mnormt)){
 # so that:
  a\%*\%b
 
-# The a matrix is the input under argument B, while the b matrix is under argument beta: 
+# The a matrix is the input under argument B, while the b matrix is under argument beta:
 # (the other zeros in B are for the not-specified lags)
  innov<-rmnorm(100, varcov=diag(2))
  startVal <- matrix(0, nrow=2, ncol=1)
@@ -147,12 +147,12 @@ TVECM.sim(TVECMobject=TVECMobject,type="boot")
 
 ##Check the bootstrap
 TVECM.sim.check <- TVECM.sim(TVECMobject=TVECMobject,type="check")
-all(TVECM.sim.check==dat)
+#all(TVECM.sim.check==dat)
 
 }
 \seealso{
-\code{\link{VECM}} or \code{\link{TVECM}} to estimate the VECM or TVECM.  
-Similar \code{\link{TVAR.sim}} and \code{\link{TVAR.boot}} for \code{\link{TVAR}}, 
+\code{\link{VECM}} or \code{\link{TVECM}} to estimate the VECM or TVECM.
+Similar \code{\link{TVAR.sim}} and \code{\link{TVAR.boot}} for \code{\link{TVAR}},
 \code{\link{VAR.sim}} and \code{\link{VAR.boot}} for VAR models estimated with \code{\link{lineVar}} models.
 }
 \author{

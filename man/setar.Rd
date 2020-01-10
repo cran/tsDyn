@@ -7,9 +7,9 @@
 Self Exciting Threshold AutoRegressive model.
 }
 \usage{
-setar(x, m, d=1, steps=d, series, mL, mM, mH, thDelay=0, mTh, thVar, th, trace=FALSE, 
-      nested=FALSE, include = c( "const", "trend","none", "both"), 
-      common=c("none", "include","lags", "both"), model=c("TAR", "MTAR"), ML=seq_len(mL), 
+setar(x, m, d=1, steps=d, series, mL, mM, mH, thDelay=0, mTh, thVar, th, trace=FALSE,
+      nested=FALSE, include = c( "const", "trend","none", "both"),
+      common=c("none", "include","lags", "both"), model=c("TAR", "MTAR"), ML=seq_len(mL),
       MM=seq_len(mM), MH=seq_len(mH),nthresh=1,trim=0.15, type=c("level", "diff", "ADF"),
       restriction=c("none","OuterSymAll","OuterSymTh") )
 }
@@ -54,14 +54,14 @@ setar(x, m, d=1, steps=d, series, mL, mM, mH, thDelay=0, mTh, thVar, th, trace=F
 \details{
 Self Exciting Threshold AutoRegressive model.
 
-\deqn{X_{t+s} = 
+\deqn{X_{t+s} =
   x_{t+s} = ( \phi_{1,0} + \phi_{1,1} x_t + \phi_{1,2} x_{t-d} + \dots +
   \phi_{1,mL} x_{t - (mL-1)d} ) I( z_t \leq th) +
   ( \phi_{2,0} + \phi_{2,1} x_t + \phi_{2,2} x_{t-d} + \dots + \phi_{2,mH}
   x_{t - (mH-1)d} ) I(z_t > th) + \epsilon_{t+steps}}{
   x[t+steps] = ( phi1[0] + phi1[1] x[t] + phi1[2] x[t-d] + \dots + phi1[mL] x[t - (mL-1)d] ) I( z[t] <= th)
   + ( phi2[0] + phi2[1] x[t] + phi2[2] x[t-d] + \dots + phi2[mH] x[t -
-  (mH-1)d] ) I( z[t] > th) + eps[t+steps]  
+  (mH-1)d] ) I( z[t] > th) + eps[t+steps]
 }
 
 with \var{z} the threshold variable. The threshold variable can alternatively be specified by (in that order):
@@ -85,7 +85,7 @@ regression theory, and are to be considered asymptoticals.
 #fit a SETAR model, with threshold as suggested in Tong(1990, p 377)
 mod.setar <- setar(log10(lynx), m=2, thDelay=1, th=3.25)
 mod.setar
-summary(mod.setar)
+#summary(mod.setar)
 
 ## example in Tsay (2005)
 data(m.unrate)

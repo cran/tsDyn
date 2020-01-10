@@ -89,7 +89,7 @@ differently: \code{K} from \code{ca.jo} corresponds to \code{lag}+1 in
 
 data(barry)
 
-## estimate the VECM with Johansen! 
+## estimate the VECM with Johansen!
 ve <- VECM(barry, lag=1, estim="ML")
 
 ## specific test:
@@ -107,7 +107,7 @@ ve_test_unspec
 ve_test_unspec_tr
 
 ## summary method: output will be same for all types/test procedure:
-summary(ve_test_unspec_tr)
+#summary(ve_test_unspec_tr)
 
 ## The function works for many specification of the VECM(), try:
 rank.test(VECM(barry, lag=3, estim="ML"))

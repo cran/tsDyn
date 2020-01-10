@@ -36,10 +36,10 @@ This function selects the lag according to AIC, BIC and Hannan-Quinn.
 
 data(barry)
 
-# 
+#
 rk_sel <- lags.select(barry)
 rk_sel
-summary(rk_sel)
+#summary(rk_sel)
 
 
 }

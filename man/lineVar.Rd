@@ -24,7 +24,7 @@ lineVar(data, lag, r = 1, include = c("const", "trend", "none", "both"),
 levels (original series) or in difference, or similarly to the univariate ADF
 case.}
 
-\item{beta}{for VECM only: user-specified cointegrating value. 
+\item{beta}{for VECM only: user-specified cointegrating value.
 If NULL, will be estimated using the estimator specified in \code{estim}}
 
 \item{estim}{Type of estimator for the VECM: '2OLS' for the two-step approach
@@ -46,10 +46,10 @@ Estimate either a VAR or a VECM.
 \details{
 This function provides basic functionalities for VAR and VECM models. More
 comprehensive functions are in package \pkg{vars}. A few differences appear
-in the VECM estimation: \describe{ 
+in the VECM estimation: \describe{
 \item{Engle-Granger estimator}{The Engle-Granger estimator is available}
 \item{Presentation}{Results are printed in a different ways, using a matrix form}
-\item{lateX export}{The matrix of coefficients can be exported to latex, 
+\item{lateX export}{The matrix of coefficients can be exported to latex,
        with or without standard-values and significance stars}
 }
 
@@ -68,7 +68,7 @@ data(zeroyld)
 #Fit a VAR
 VAR <- lineVar(zeroyld, lag=1)
 VAR
-summary(VAR)
+#summary(VAR)
 
 #compare results with package vars:
 if(require(vars)) {
@@ -80,35 +80,38 @@ all.equal(coef(VAR),coef_vars, check.attributes=FALSE)
 ###VECM
 VECM.EG <- lineVar(zeroyld, lag=2, model="VECM")
 VECM.EG
-summary(VECM.EG)
+#summary(VECM.EG)
 
 VECM.ML <- lineVar(zeroyld, lag=2, model="VECM", estim="ML")
 VECM.ML
-summary(VECM.ML)
+#summary(VECM.ML)
 
 
 ###Check Johansen MLE
 myVECM <- lineVar(zeroyld, lag=1, include="const", model="VECM", estim="ML")
-summary(myVECM, digits=7) 
+myVECM
+#summary(myVECM, digits=7)
+
 #comparing with vars package
 if(require(vars)){
 a<-ca.jo(zeroyld, spec="trans")
-summary(a)
+a
+#summary(a)
 #same answer also!
 }
 
 ##export to Latex
-toLatex(VECM.EG)
-toLatex(summary(VECM.EG))
+#toLatex(VECM.EG)
+#toLatex(summary(VECM.EG))
 options("show.signif.stars"=FALSE)
-toLatex(summary(VECM.EG), parenthese="Pvalue")
+#toLatex(summary(VECM.EG), parenthese="Pvalue")
 options("show.signif.stars"=TRUE)
 
 
 
 }
 \seealso{
-\code{\link{VECM}} which is just a wrapper for \code{lineVar(..., model="VECM")}. 
+\code{\link{VECM}} which is just a wrapper for \code{lineVar(..., model="VECM")}.
 Methods \code{\link{predict.VAR}}, \code{\link{VARrep}}, \code{\link{regime}}, \code{\link{irf}} and \code{\link{toLatex}}.
 
 \code{\link{TVAR}} and \code{\link{TVECM}} for the corresponding threshold

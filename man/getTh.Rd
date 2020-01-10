@@ -25,7 +25,7 @@ Extract threshold coefficient(s)
 
 set<-setar(lynx, m=3)
 getTh(set)
-getTh(summary(set))
+#getTh(summary(set))
 
 }
 \author{

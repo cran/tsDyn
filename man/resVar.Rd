@@ -19,7 +19,7 @@ resVar(x, adj=c("OLS", "ML"))
 }
 
 \details{
-The degree of freedom adjustment in the formula for the variance is the number of parameters when \code{adj="OLS"} or zero when \code{adj="ML"}. 
+The degree of freedom adjustment in the formula for the variance is the number of parameters when \code{adj="OLS"} or zero when \code{adj="ML"}.
 
 }
 \references{
@@ -30,7 +30,8 @@ Non-Linear Time Series: A Dynamical Systems Approach, Tong, H., Oxford: Oxford U
 \examples{
 #Lynx model as in Tong (1980, p. 387)
 mod.setar <- setar(log10(lynx), mL=7,mH=2, thDelay=1, th=3.116)
-summary(mod.setar)
+mod.setar
+#summary(mod.setar)
 #coefficients are same for lower regime but differ for higer
 
 resVar(mod.setar, adj="ML")

@@ -9,7 +9,7 @@
 AR(m) model
 }
 \usage{
-	linear(x, m, d=1, steps=d, series, include = c( "const", "trend","none", "both"), 
+	linear(x, m, d=1, steps=d, series, include = c( "const", "trend","none", "both"),
         type=c("level", "diff", "ADF"))
 }
 \value{
@@ -37,6 +37,6 @@ AR(m) model:
 #fit an AR(2) model
 mod.linear <- linear(log(lynx), m=2)
 mod.linear
-summary(mod.linear)
+#summary(mod.linear)
 }
 \keyword{ ts }

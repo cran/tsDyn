@@ -51,7 +51,7 @@ AIC(mod.setar)
 mse(mod.setar)
 MAPE(mod.setar)
 coef(mod.setar)
-summary(mod.setar)
+#summary(mod.setar)
 
 e <- residuals(mod.setar)
 e <- e[!is.na(e)]

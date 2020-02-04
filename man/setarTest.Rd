@@ -1,11 +1,11 @@
 \name{setarTest}
 \alias{setarTest}
-\alias{setartest}
+
 \title{Test of linearity}
 \description{Test of linearity against threshold of Hansen (1999) with bootstrap distribution
 }
 \usage{
-setarTest(x, m, d = 1, steps = d, series, thDelay = 0, nboot=10, trim=0.1, 
+setarTest(x, m, d = 1, steps = d, series, thDelay = 0, nboot=10, trim=0.1,
           test=c("1vs", "2vs3"), hpc=c("none", "foreach"),check=FALSE)
 }
 
@@ -40,7 +40,7 @@ Estimation of the first threshold parameter is made with CLS, a conditional sear
  \deqn{
 F_{ij}=T( (S_{i}-S_{j})/S_{j} )}
 
-where \eqn{S_{i}} is the SSR of the model with i regimes (and so i-1 thresholds). 
+where \eqn{S_{i}} is the SSR of the model with i regimes (and so i-1 thresholds).
 
 Three test are avalaible. The both first can be seen as linearity test, whereas the third can be seen as a specification test: once the 1vs2 or/and 1vs3 rejected the linearity and henceforth accepted the presence of a threshold, is a model with one or two thresholds preferable?
 
@@ -48,11 +48,11 @@ Test \bold{1vs}2: Linear AR versus 1 threshold TAR
 
 Test \bold{1vs}3: Linear AR versus 2 threshold2 TAR
 
-Test \bold{2vs3}: 1 threshold TAR versus 2 threshold2 TAR  
+Test \bold{2vs3}: 1 threshold TAR versus 2 threshold2 TAR
 
-The both first are computed together and avalaible with test="1vs". The third test is avalaible with test="2vs3". 
+The both first are computed together and avalaible with test="1vs". The third test is avalaible with test="2vs3".
 
-The homoskedastic bootstrap distribution is based on resampling the residuals from H0 model (ar for test 1vs, and setar(1) for test 2vs3), estimating the threshold parameter and then computing the Ftest, so it involves many computations and is pretty slow. 
+The homoskedastic bootstrap distribution is based on resampling the residuals from H0 model (ar for test 1vs, and setar(1) for test 2vs3), estimating the threshold parameter and then computing the Ftest, so it involves many computations and is pretty slow.
 }
 \seealso{
 \code{\link{TVAR.LRtest}} for the multivariate version. \code{\link{SETAR}} for estimation of the model.

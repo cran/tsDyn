@@ -57,8 +57,8 @@
 #'##Check the bootstrap
 #'cbind(setar.sim(data=sun,nthresh=2,n=500, type="check", Thresh=c(6,9))$serie,sun)
 #'
-setar.sim<-function(data,B, setarObject, n=200, lag=1, trend=TRUE, nthresh=0, thDelay=0, Thresh, type=c("boot", "simul", "check"), starting=NULL,  rand.gen = rnorm, innov = rand.gen(n, ...),...){
-###1: 3 possibilities: 
+setar.sim<-function(data,B, setarObject, n=200, lag=1, trend=TRUE, nthresh=0, thDelay=0, Thresh, type=c("boot", "simul", "check"), starting=NULL,  rand.gen = rnorm, innov = rand.gen(n)){
+###1: 3 possibilities:
 #either simulation with given th and coefMat B
 # or bootstrap of linear/setar object or raw data converted into it
 ###2:simulations loops
@@ -114,7 +114,7 @@ if(!missing(data)){
       th<-Thresh
     setarObject<-setar(data, nthresh=nthresh, m=lag, th=th, trace=FALSE)
    }
-} 
+}
 
 
 if(!missing(setarObject)){
@@ -162,7 +162,7 @@ if(type=="simul")
 	ndig<-4
 else
 	ndig<-getndp(y)
-	
+
 if(ndig>.Options$digits){
 	ndig<-.Options$digits
 	y<-round(y,ndig)
@@ -186,7 +186,7 @@ z2<-vector("numeric", length=length(y))
 z2[1:lag]<-y[1:lag]
 #rnorm(length(y)-lag,sd=sigma)
 innova<-switch(type, "boot"=sample(res, replace=TRUE), "simul"=innov, "check"=res)
-resb<-c(rep(0,lag),innova)	
+resb<-c(rep(0,lag),innova)
 
 if(nthresh==0){
 for(i in (lag+1):length(y)){
@@ -197,9 +197,9 @@ for(i in (lag+1):length(y)){
 
 else if(nthresh==1){
 	for(i in (lag+1):length(y)){
-		if(round(z2[i-thDelay],ndig)<=Thresh) 
+		if(round(z2[i-thDelay],ndig)<=Thresh)
 			Yb[i]<-sum(BDown[1],BDown[-1]*Yb[i-c(1:lag)],resb[i])
-		else 
+		else
 			Yb[i]<-sum(BUp[1],BUp[-1]*Yb[i-c(1:lag)],resb[i])
 		z2[i]<-Yb[i]
 		}
@@ -207,9 +207,9 @@ else if(nthresh==1){
 
 else if(nthresh==2){
 	for(i in (lag+1):length(y)){
-		if(round(z2[i-thDelay],ndig)<=Thresh[1]) 
+		if(round(z2[i-thDelay],ndig)<=Thresh[1])
 			Yb[i]<-sum(BDown[1],BDown[-1]*Yb[i-c(1:lag)],resb[i])
-		else if(round(z2[i-thDelay],ndig)>Thresh[2]) 
+		else if(round(z2[i-thDelay],ndig)>Thresh[2])
 			Yb[i]<-sum(BUp[1],BUp[-1]*Yb[i-c(1:lag)],resb[i])
 		else
 			Yb[i]<-sum(BMiddle[1],BMiddle[-1]*Yb[i-c(1:lag)],resb[i])
@@ -220,12 +220,12 @@ else if(nthresh==2){
 if(FALSE){
 	while(mean(ifelse(Yb<Thresh, 1,0))>0.05){
 		cat("not enough")
-		if(!missing(thVar)) 
+		if(!missing(thVar))
 			Recall(B=B,n=n, lag=lag, trend=trend, nthresh=nthresh, thDelay=thDelay,thVar=thVar, type="simul", starting=starting)
 		else
 			Recall(B=B, n=n, lag=lag, trend=trend, nthresh=nthresh, thDelay=thDelay,mTh=mTh, type="simul", starting=starting)
 		y<-NULL
-		
+
 		}
 }
 

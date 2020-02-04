@@ -1,5 +1,5 @@
 0636e73ff0215e8d672dc4c32c317bb3 *COPYING
-2056eefda1c13960ca692724db55f601 *DESCRIPTION
+08dce0b4f242a0ed3c9bb7cd8bceaa59 *DESCRIPTION
 08b0a3878f423ee6bd6120127d4b9add *NAMESPACE
 ebfbf0a6a691c7454013ed75aafd583a *R/BBCtest.R
 02922d6e50e497c5e576baf3cfe34798 *R/KapShinTest.R
@@ -42,7 +42,7 @@ a82e1256398d122f0cb5fdda23f99a54 *R/resVar.R
 d75134d195ad0da238697af8d3b06184 *R/selectLSTAR.R
 365134064380c8d376e1597d02a680ed *R/selectSETAR.R
 578fa64e89e0541f45a0a4a3d0e9d368 *R/setar.R
-11a68f85284c3ed1e4536eff791bafe5 *R/setar.sim.R
+208bb5b6dd4f386cd4819c56e4843333 *R/setar.sim.R
 c1aba0d617272088474b24c1f7c0b69c *R/setarTest.R
 6ed9044e3f035b14dedc59242f9360ee *R/star.R
 1c6137b2194d87d15732b9c9445b028c *R/vcov.R
@@ -53,9 +53,6 @@ fbc5b85566d9d14cf7d2d104215c8bae *R/zzz.R
 5df23ec263560b04a4d258d6e1883656 *data/barry.rda
 012d594a9209c41fef38fe03109d5118 *data/m.unrate.rda
 3bd5244371b733c6fcf9f3cbd6868829 *data/zeroyld.rda
-291a60baa9fd3fcdc2ed9029e72aa94f *inst/CITATION
-b9a1ea678b788db019e4be138870d99f *inst/ChangeLog
-d3608a5e72e170d42c34986d96b5b43c *inst/tsDyn-design.Stex
 ef5f074e5e920e7c75bd71441c96e555 *man/BBCTest.Rd
 92d7abddd38b372c2e66d9d22896e9af *man/DataIIPUs.Rd
 6743c545116e38cb91b2cbca883303d0 *man/DataUsUnemp.Rd
@@ -115,12 +112,12 @@ d8ce59ec55aa49aaf6fef79053175268 *man/plot-methods.Rd
 b03418ad513fed82673fda4e3de6f828 *man/resVar.Rd
 550c8de3a283d47bf4bd2da808f9d679 *man/selectHyperParms.Rd
 9219b8e66bae900d89832a7209ffc8dc *man/selectSETAR.Rd
-163103098b86b14e3a8f4e983cdd471c *man/setar.Rd
-abc7b7058933cb33de15893aa1165ef4 *man/setar.sim.Rd
-28a882c6007909f4ec72ec943bf71a25 *man/setarTest.Rd
+e7b5d85db7137da2bc66f9472521798c *man/setar.Rd
+a43358361f1b2a23fe30d58adb08e219 *man/setar.sim.Rd
+54b086410627e732936d854b6d014da0 *man/setarTest.Rd
 44f624a602ee71b531111163ad8e0f2a *man/sigmoid.Rd
 4608acce86fae36145be1e244bf6afef *man/star.Rd
-41b8432590cbc47371309805822f7587 *man/toLatex.setar.Rd
+1828c34890f18fb1c6e7c1a593ae23e6 *man/toLatex.setar.Rd
 e56b0de0bd9d80e7e13ea95bc8e208f5 *man/tsDyn-package.Rd
 cd83ed170a0540b9d733fd3283b91192 *man/zeroyld.Rd
 c12d3341a4d1995724e89b510a7be946 *src/llar.c

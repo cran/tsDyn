@@ -28,12 +28,12 @@
 #'gives the speciifc p-value.} \item{Automatic test}{If not value is specified
 #'for \sQuote{r_null}, the function makes a simple automatic test: returns the
 #'rank (slot \sQuote{r}) of the first test not rejected (level specified by arg
-#'\sQuote{cval}) as recommend i.a. in Doornik et al (1998, p. 544).} }
+#'\code{cval}) as recommend i.a. in Doornik et al (1998, p. 544).} }
 #'
 #'A full table with both test statistics ad their respective p-values is given
 #'in the summary method.
 #'
-#'P-values are obtained from the gamma aproximation from Doornik (1998, 1999).
+#'P-values are obtained from the gamma approximation from Doornik (1998, 1999).
 #'Small sample values adjusted for the sample site are also available in the
 #'summary method.  Note that the \sQuote{effective sample size} for the these
 #'values is different from output in gretl for example.
@@ -78,7 +78,7 @@
 #'Revisited, Journal of Economic Surveys, 12, 533-72
 #'
 #'- Johansen, S. (1996) Likelihood-based inference in cointegrated Vector
-#'Autoregresive Models, Oxford University Press
+#'Autoregressive Models, Oxford University Press
 #'@keywords ts
 #'@examples
 #'
@@ -182,8 +182,7 @@ rank.test <- function(vecm, type=c("eigen","trace"), r_null, cval=0.05){
 }
 
 #' @rdname rank.test
-#' @method print rank.test
-#' @S3method print rank.test
+#' @export
 print.rank.test <- function(x, ...) {
 
   if(x$call$r_null=="unspec"){
@@ -197,8 +196,7 @@ print.rank.test <- function(x, ...) {
 
 #' @rdname rank.test
 #' @param digits The number of digits to use in \code{\link{format.pval}}
-#' @method summary rank.test
-#' @S3method summary rank.test
+#' @export
 summary.rank.test <- function(object, digits=max(1, getOption("digits") - 3), ...) {
   res <- object$res_df
   rownames(res) <- NULL

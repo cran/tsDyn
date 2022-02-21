@@ -1,6 +1,6 @@
 #' Predict method for objects of class \sQuote{\code{nlar}}.
 #' 
-#' Forecating a non-linear model object of general class \sQuote{\code{nlar}},
+#' Forecasting a non-linear model object of general class \sQuote{\code{nlar}},
 #' including \sQuote{\code{setar}} and \sQuote{\code{star}}.
 #' 
 #' @aliases predict predict.nlar
@@ -15,6 +15,7 @@
 #' @param block.size The block size when the block-bootstrap is used.
 #' @param boot1Zero Whether the first innovation for MC/bootstrap should be set
 #' to zero.
+#' @param seed optional, the seed for the random generation.
 #' @param \dots Further arguments passed to the internal \sQuote{\code{oneStep}} function. 
 #' Mainly argument \sQuote{\code{thVar}} if an external threshold variable was provided
 #' 
@@ -26,7 +27,7 @@
 #' available:
 #' 
 #' \describe{ \item{naive}{No residuals} \item{MC}{Monte-Carlo method, where
-#' residuals are taken from a normal distribution, with sd. equal to the
+#' residuals are taken from a normal distribution, with a standard deviation equal to the
 #' residuals sd. } \item{bootstrap}{Residuals are resampled from the empirical
 #' residuals from the model.} \item{block-bootstrap}{Same as bootstrap, but
 #' residuals are resampled in block, with size \code{block.size}} }
@@ -78,9 +79,10 @@
 #' legend("bottomleft", leg=legLabels, lty=1:5, col=1:5)
 #' 
 
-#' @S3method predict nlar
+#' @export
 #### Predict nlar
-predict.nlar <- function(object, newdata, n.ahead=1, type=c("naive", "MC", "bootstrap", "block-bootstrap"), nboot=100, ci=0.95, block.size=3, boot1Zero=TRUE,...)
+predict.nlar <- function(object, newdata, n.ahead=1, type=c("naive", "MC", "bootstrap", "block-bootstrap"),
+                         nboot=100, ci=0.95, block.size=3, boot1Zero=TRUE, seed = NULL, ...)
 {
 
   type <- match.arg(type)
@@ -108,10 +110,10 @@ predict.nlar <- function(object, newdata, n.ahead=1, type=c("naive", "MC", "boot
   ## Loop for new predictions using specific oneStep()
   pred_fun <- function(res){ 
     innov <- switch(type, 
-	      "naive"= rep(0, n.ahead), 
-	      "MC"= rnorm(n.ahead, mean=0, sd=sd.res), 
-	      "bootstrap" = sample(resid, size=n.ahead, replace=TRUE),
-	      "block-bootstrap" = sample.block(resid, block.size= block.size))
+                    "naive"= rep(0, n.ahead), 
+                    "MC"= rnorm(n.ahead, mean=0, sd=sd.res), 
+                    "bootstrap" = sample(resid, size=n.ahead, replace=TRUE),
+                    "block-bootstrap" = sample.block(resid, block.size= block.size))
     if(boot1Zero) innov[1] <- 0
     for(i in n.used + (1:n.ahead)) {
       res[i] <- oneStep(object, newdata = t(as.matrix(res[i - xrange])),
@@ -121,16 +123,21 @@ predict.nlar <- function(object, newdata, n.ahead=1, type=c("naive", "MC", "boot
     return(res)
   }
 
+  if(!is.null(seed)) set.seed(seed)
   res <- replicate(nboot, pred_fun(res=res))
   res_means <- rowMeans(res, na.rm=TRUE)
   pred <- res_means[n.used + 1:n.ahead]
 
 ## Compute SE if MC/boot
   if(type!="naive"){
-    SE <- t(apply(res[n.used + 1:n.ahead, ,drop=FALSE], 1 ,quantile, prob=sort(c(1-ci, ci)), na.rm=TRUE))
+    ci_half <- (1-ci)/2
+    SE <- t(apply(res[n.used + 1:n.ahead, ,drop=FALSE], 1 , sd, na.rm=TRUE))
+    CI <- t(apply(res[n.used + 1:n.ahead, ,drop=FALSE], 1 , quantile, prob=sort(c(ci_half, 1-ci_half)), na.rm=TRUE))
     if(is.ts(newdata)){
       SE <- ts(SE, start = tsp(newdata)[2] + deltat(newdata),
-	      frequency=frequency(newdata))
+               frequency=frequency(newdata))
+      CI <- ts(CI, start = tsp(newdata)[2] + deltat(newdata),
+               frequency=frequency(newdata))
     }
   }
 
@@ -140,7 +147,7 @@ predict.nlar <- function(object, newdata, n.ahead=1, type=c("naive", "MC", "boot
   if(type=="naive"){
     result <- pred
   } else {
-    result <- list(pred=pred, se=SE)
+    result <- list(pred=pred, se=SE, ci=CI)
   }
 
   return(result)
@@ -149,71 +156,57 @@ predict.nlar <- function(object, newdata, n.ahead=1, type=c("naive", "MC", "boot
 
 
 #### Predict TVECM/TVAR
-#' @S3method predict TVECM
+#' @export
 predict.TVECM <- function(object, ...) stop("predict() not available for TVECM")
 
 
-#### Small function to sample in block: sample.block 
-sample.block <- function(x, size=length(x), block.size=2){
-  n <- length(x)
-  n.blocks <- ceiling((n/block.size))
-
-  block <- rep(1:n.blocks, each=block.size)[1:n]
-  sam <- sample(1:n.blocks , size=n.blocks , replace=TRUE)
-  m<-match(sam,block)
-  m2 <- rep(m, each=block.size)[1:n]
-  m3 <- m2 +rep(0:(block.size-1), n)[1:n]
-
-  if(any(m3>n)) m3[m3>n] <- m3[m3>n]-(max(m3)-n)
-  x[m3]
-}
 
 
 ############# TESTS
 if(FALSE){
-library(tsDyn)
-
-set <- setar(lynx, m=2)
-tsDyn:::predict.nlar(set, n.ahead=1)
-
-environment(predict.nlar) <- environment(star)
-environment(oneStep) <- environment(star)
-
+  library(tsDyn)
+  
+  set <- setar(lynx, m=2)
+  tsDyn:::predict.nlar(set, n.ahead=1)
+  
+  environment(predict.nlar) <- environment(star)
+  environment(oneStep) <- environment(star)
+  
 ## n-ahead: 1
-tsDyn:::predict.nlar(set, n.ahead=1)
-tsDyn:::predict.nlar(set, n.ahead=1, type="naive")
-tsDyn:::predict.nlar(set, n.ahead=1, type="MC")
-tsDyn:::predict.nlar(set, n.ahead=1, type="bootstrap")
-
+  tsDyn:::predict.nlar(set, n.ahead=1)
+  tsDyn:::predict.nlar(set, n.ahead=1, type="naive")
+  tsDyn:::predict.nlar(set, n.ahead=1, type="MC")
+  tsDyn:::predict.nlar(set, n.ahead=1, type="bootstrap")
+  
 ## n-ahead: 2
-tsDyn:::predict.nlar(set, n.ahead=2)
-tsDyn:::predict.nlar(set, n.ahead=2, type="naive")
-tsDyn:::predict.nlar(set, n.ahead=2, type="MC", nboot=100)
-tsDyn:::predict.nlar(set, n.ahead=2, type="bootstrap", nboot=100)
-
+  tsDyn:::predict.nlar(set, n.ahead=2)
+  tsDyn:::predict.nlar(set, n.ahead=2, type="naive")
+  tsDyn:::predict.nlar(set, n.ahead=2, type="MC", nboot=100)
+  tsDyn:::predict.nlar(set, n.ahead=2, type="bootstrap", nboot=100)
+  
 ## n-ahead: 5
-tsDyn:::predict.nlar(set, n.ahead=5)
-tsDyn:::predict.nlar(set, n.ahead=5, type="naive")
-tsDyn:::predict.nlar(set, n.ahead=5, type="MC", nboot=5)
-
+  tsDyn:::predict.nlar(set, n.ahead=5)
+  tsDyn:::predict.nlar(set, n.ahead=5, type="naive")
+  tsDyn:::predict.nlar(set, n.ahead=5, type="MC", nboot=5)
+  
 ###### LSTAR
-mod.lst <- lstar(lynx, m=2, th=1300)
-
-predict(mod.lst, n.ahead=5)
-predict(mod.lst, n.ahead=5, type="MC", nboot=100)
-predict(mod.lst, n.ahead=5, type="bootstrap", nboot=100)
-
-###### AAR
-mod.aar <- aar(lynx, m=2)
-predict(object=mod.aar , n.ahead=5)
-
-## NNet
-mod.nnet <- nnetTs(log10(lynx), m=1, size=3, control=list(maxit=1000))
-
-predict(mod.nnet, n.ahead=10)
-predict(mod.nnet, n.ahead=10, type="MC", nboot=2)
-predict(mod.nnet, n.ahead=10, type="bootstrap", nboot=2)
-
-
+  mod.lst <- lstar(lynx, m=2, th=1300)
+  
+  predict(mod.lst, n.ahead=5)
+  predict(mod.lst, n.ahead=5, type="MC", nboot=100)
+  predict(mod.lst, n.ahead=5, type="bootstrap", nboot=100)
+  
+  ###### AAR
+  mod.aar <- aar(lynx, m=2)
+  predict(object=mod.aar , n.ahead=5)
+  
+  ## NNet
+  mod.nnet <- nnetTs(log10(lynx), m=1, size=3, control=list(maxit=1000))
+  
+  predict(mod.nnet, n.ahead=10)
+  predict(mod.nnet, n.ahead=10, type="MC", nboot=2)
+  predict(mod.nnet, n.ahead=10, type="bootstrap", nboot=2)
+  
+  
 }
 

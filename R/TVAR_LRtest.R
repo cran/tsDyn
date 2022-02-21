@@ -14,7 +14,7 @@
 #'\eqn{ \hat \Sigma_{i}} is the estimated covariance matrix of the model with i
 #'regimes (and so i-1 thresholds).
 #'
-#'Three test are avalaible. The both first can be seen as linearity test,
+#'Three test are available. The both first can be seen as linearity test,
 #'whereas the third can be seen as a specification test: once the 1vs2 or/and
 #'1vs3 rejected the linearity and henceforth accepted the presence of a
 #'threshold, is a model with one or two thresholds preferable?
@@ -25,8 +25,8 @@
 #'
 #'Test \bold{2vs3}: 1 threshold TAR versus 2 threshold2 TAR
 #'
-#'The both first are computed together and avalaible with test="1vs". The third
-#'test is avalaible with test="2vs3".
+#'The both first are computed together and available with test="1vs". The third
+#'test is available with test="2vs3".
 #'
 #'The homoskedastik bootstrap distribution is based on resampling the residuals
 #'from H0 model, estimating the threshold parameter and then computing the
@@ -67,7 +67,7 @@
 #'@seealso \code{\link{setarTest}} for the univariate version.
 #'\code{\link{OlsTVAR}} for estimation of the model.
 #'@references Hansen (1999) Testing for linearity, Journal of Economic Surveys,
-#'Volume 13, Number 5, December 1999 , pp. 551-576(26) avalaible at:
+#'Volume 13, Number 5, December 1999 , pp. 551-576(26) available at:
 #'\url{http://www.ssc.wisc.edu/~bhansen/papers/cv.htm}
 #'
 #'Lo and Zivot (2001) "Threshold Cointegration and Nonlinear Adjustment to the
@@ -503,11 +503,13 @@ TVAR.LRtest <- function (data, lag=1, trend=TRUE, series, thDelay = 1:m, mTh=1, 
 
   if(test=="1vs"){
     CriticalValBoot<-rbind(CriticalValBoot12,CriticalValBoot13)
+    rownames(CriticalValBoot) <-  c("1vs2", "1vs3")
     PvalBoot<-c(PvalBoot12,PvalBoot13)
     names(PvalBoot)<-c("1vs2", "1vs3")
   } else {
-    CriticalValBoot<-CriticalValBoot23
-    PvalBoot<-PvalBoot23
+    CriticalValBoot <- matrix(CriticalValBoot23, nrow = 1,
+                              dimnames = list("2vs3", names(CriticalValBoot23)))
+    PvalBoot <- PvalBoot23
   }
 
 
@@ -542,7 +544,8 @@ TVAR.LRtest <- function (data, lag=1, trend=TRUE, series, thDelay = 1:m, mTh=1, 
 #### RETURN RESULT
 #nlar=extend(nlar(str, coef = res$coef, fit = res$fitted.values, res = res$residuals, k = res$k,
 #list( model.specific = res),"setar")
-  res<-list(bestDelay=bestDelay, LRtest.val=LRs, Pvalueboot=PvalBoot, CriticalValBoot=CriticalValBoot, type="test")
+  res<-list(bestDelay=bestDelay, LRtest.val=LRs, Pvalueboot=PvalBoot, CriticalValBoot=CriticalValBoot,
+            type= test)
   class(res)<-"TVARtest"
   return(res)
 }#End of thw whole function
@@ -559,10 +562,16 @@ summary.TVARtest<-function(object,...){
   LR<-rbind(object$LRtest.val,object$Pvalueboot)
   rownames(LR)<-c("Test", "P-Val")
   print(LR)
-  cat("\n Bootstrap critical values for test 1 vs 2 regimes\n")
-  print(object$CriticalValBoot[1,])
-  cat("\n Bootstrap critical values for test 1 vs 3 regimes\n")
-  print(object$CriticalValBoot[2,])
+  
+  if(object$type == "1vs") {
+    cat("\n Bootstrap critical values for test 1 vs 2 regimes\n")
+    print(object$CriticalValBoot[1,])
+    cat("\n Bootstrap critical values for test 1 vs 3 regimes\n")
+    print(object$CriticalValBoot[2,])
+  } else if(object$type=="2vs3") {
+    cat("\n Bootstrap critical values for test 2 vs 3 regimes\n")
+    print(object$CriticalValBoot[1,])
+  }
 }
 
 

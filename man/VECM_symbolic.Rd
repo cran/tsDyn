@@ -2,19 +2,24 @@
 % Please edit documentation in R/VECM_symbolic.R
 \name{VECM_symbolic}
 \alias{VECM_symbolic}
-\title{Virtua VECM model}
+\title{Virtual VECM model}
 \usage{
-VECM_symbolic(alpha, beta, lags, inc, include = c("none", "const", "trend",
-  "both"))
+VECM_symbolic(
+  alpha,
+  beta,
+  lags,
+  inc,
+  include = c("none", "const", "trend", "both")
+)
 }
 \arguments{
 \item{alpha}{Matrix of alpha speed adjustment coefficients.}
 
 \item{beta}{Matrix of alpha, cointegrating coefficients.}
 
-\item{lags}{Matrix containg the lags coefficients.}
+\item{lags}{Matrix containing the lags coefficients.}
 
-\item{inc}{Matrix containg the include (see following arg) coefficients.}
+\item{inc}{Matrix containing the include (see following arg.) coefficients.}
 
 \item{include}{Character indicating the type of deterministic term included,
 if any.}

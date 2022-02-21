@@ -121,7 +121,11 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
   if(lag==0) {
     warning("Lag=0 not fully implemented, methods not expected to work: fevd, predict, irf,...")
   }
-  if(LRinclude%in%c("const", "both"))  include<-"none"
+  if(LRinclude%in%c("const", "both") & include !="none")  {
+    warning("When `LRinclude` is either 'const' or 'both', `include` can only be `none`.\n  Setting include='none'.")
+    include <- "none"
+  }
+
   ninclude<-switch(include, "const"=1, "trend"=1,"none"=0, "both"=2)
   model<-match.arg(model)
   estim<-match.arg(estim)
@@ -139,7 +143,7 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
   Y <- y[(p+1):T,] #
   X <- embed(y, p+1)[, -seq_len(k)]	#Lags matrix
 
-  #Set up of dependant and independant variables matrices
+  #Set up of dependent and independent variables matrices
   if(notAllLags)
     X<-X[,sort(rep((Lags*k-k+1), k))+0:(k-1)]
 
@@ -179,7 +183,7 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
     n_exo <- NROW(exogen)
     if(n_exo!=t){
       if(n_exo!=T)  warning("exogen is of size ", n_exo, "while full/end-sample size is of size", T,"/", nrow(Z), "series shortened")
-      exogen <- myTail(exogen, t, addrownums=FALSE)
+      exogen <- myTail(exogen, t, keepnums=FALSE)# changed form addrownums
     }
     Z <- if(lag==0 & include=="none") exogen else cbind(Z, exogen)
   }
@@ -356,6 +360,11 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
     } 
   }
 
+  inputArgs <-  list()
+  inputArgs$I <-  I
+  inputArgs$estim <-  estim
+  inputArgs$LRinclude <- LRinclude
+  inputArgs$call <- match.call()
 
   z<-list(residuals=res,  
           coefficients=B,  k=k, t=t,T=T, npar=npar, nparB=ncol(B), type="linear", 
@@ -368,7 +377,8 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
           exogen = !is.null(exogen),
           num_exogen = if(!is.null(exogen)) NCOL(exogen) else 0,
           model.specific=model.specific,
-          qr=lmReg$qr)
+          qr=lmReg$qr,
+          inputArgs = inputArgs)
   if(model=="VAR"){
     class(z)<-c("VAR","nlVar")
   } else {
@@ -402,8 +412,8 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 #' argument allowing to compute rolling forecasts.} }
 #'
 #' Two estimators are available: the Engle-Granger two step approach
-#' (\code{2OLS}) or the Johansen (\code{ML}). For the 2OLS, deterministics
-#' regressors (or external variables if LRinclude is of class numeric) can be
+#' (\code{2OLS}) or the Johansen (\code{ML}). For the 2OLS, deterministic
+#' regressors (or external variables if \code{LRinclude} is of class numeric) can be
 #' added for the estimation of the cointegrating value and for the ECT. This is
 #' only working when the beta value is not pre-specified.
 #'
@@ -443,13 +453,16 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 #'end-sample.
 #'
 #'@return An object of class \code{VECM} (and higher classes \code{VAR} and
-#'\code{nlVar}) with methods: \describe{ \item{Usual methods}{Print, summary,
-#'plot, residuals, fitted, vcov} \item{Fit criteria}{AIC, BIC,
-#'\code{\link{MAPE}}, \code{\link{mse}}, \code{\link[=logLik.VECM]{logLik}}
-#'(latter only for models estimated with MLE)} \item{Prediction}{Predict and
-#'\code{\link{predict_rolling}}} \item{VAR/VECM methods}{Impulse response
-#'function (\code{\link[=irf.nlVar]{irf}}) and forecast error variance
-#'decomposition (\code{\link[=fevd.nlVar]{fevd}})} \item{LaTeX}{toLatex} }
+#'\code{nlVar}) with methods: 
+#'\describe{ 
+#'\item{Usual methods:}{Print, summary,  residuals, fitted, vcov} 
+#'\item{Fit criteria:}{AIC, BIC, \code{\link{MAPE}}, \code{\link{mse}}, \code{\link[=logLik.VECM]{logLik}}
+#'(the latter only for models estimated with MLE)} 
+#'\item{Prediction:}{predict and \code{\link{predict_rolling}}} 
+#'\item{coef extraction:}{Extract cointegrating/adjustment coefficients, \code{\link{coefA}}, \code{\link{coefB}} \code{\link{coefPI}}} 
+#'\item{VAR/VECM methods:}{Impulse response function (\code{\link{irf.VECM}}) and forecast error variance
+#'decomposition (\code{\link[=fevd.nlVar]{fevd}})} 
+#'\item{LaTeX:}{toLatex} }
 #'
 #'@author Matthieu Stigler
 #'
@@ -461,7 +474,7 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 #'to extract the relevant parameter matrices. 
 #'
 #'\code{\link{lineVar}} \code{\link{TVAR}} and \code{\link{TVECM}} for
-#'the correspoding threshold models. \code{\link{linear}} for the univariate AR
+#'the corresponding threshold models. \code{\link{linear}} for the univariate AR
 #'model.
 #'@keywords ts
 #'@export
@@ -531,12 +544,12 @@ toLatex(summary(aVAR))
 
 
 
-#' @S3method print VAR
+#' @export
 print.VAR <- function(x,...){
 	print(coef(x))
 }
 
-#' @S3method summary VAR
+#' @export
 summary.VAR<-function(object, digits=4,...){
   x<-object
   r<-4
@@ -585,7 +598,7 @@ summary.VAR<-function(object, digits=4,...){
 }
 
 
-#' @S3method print summary.VAR
+#' @export
 print.summary.VAR<-function(x,...){
   cat("#############\n###Model", attr(x,"model"),"\n#############")
   cat("\nFull sample size:",x$T, "\tEnd sample size:", x$t) 
@@ -600,7 +613,7 @@ print.summary.VAR<-function(x,...){
 
 }
 
-#' @S3method vcov VAR
+#' @export
 vcov.VAR<-function(object, ...){
   sum<-summary.VAR(object)
   so<-sum$sigma %x% sum$cov.unscaled
@@ -611,7 +624,7 @@ vcov.VAR<-function(object, ...){
   so
 }
 
-#' @S3method toLatex VAR
+#' @export
 toLatex.VAR<-function(object,..., digits=4, parenthese=c("StDev","Pvalue"), label){
   x<-object
   if(attr(x,"model")=="VECM"&&x$model.specific$LRinclude!="none") stop("toLatex not implemented now for models with arg 'LRinclude' different from 'none'") 

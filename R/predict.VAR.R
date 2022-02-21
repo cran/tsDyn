@@ -1,6 +1,6 @@
 #' Predict method for objects of class \sQuote{\code{VAR}}, \sQuote{\code{VECM}} or \sQuote{\code{TVAR}}
 #' 
-#' Forecating the \strong{level} of a series estimated by  \sQuote{\code{VAR}} / \sQuote{\code{VECM}} or \sQuote{\code{TVAR}}
+#' Forecasting the \strong{level} of a series estimated by  \sQuote{\code{VAR}} / \sQuote{\code{VECM}} or \sQuote{\code{TVAR}}
 #' 
 #' @aliases  predict.VAR predict.VECM
 #' @param object An object of class  \sQuote{\code{VAR}}, \sQuote{\code{VECM}} or \sQuote{\code{TVAR}}
@@ -60,6 +60,7 @@
 
 
 ###################
+#' @export
 predict.VAR <- function(object, newdata, n.ahead=5, 
                         newdataTrendStart, exoPred=NULL, ...){
   
@@ -115,7 +116,7 @@ predict.VAR <- function(object, newdata, n.ahead=5,
   
   if(!missing(newdata)) {
     if(!inherits(newdata, c("data.frame", "matrix","zoo", "ts"))) stop("Arg 'newdata' should be of class data.frame, matrix, zoo or ts")
-    if(nrow(newdata)!=lag) stop("Please provide newdata with nrow=lag")
+    if(nrow(newdata)!=lag) stop(paste0("Please provide newdata with nrow=lag=", lag))
     starting <-  newdata 
   }
   
@@ -197,7 +198,7 @@ predict2.VAR <- function(object, newdata, n.ahead=5, newdataTrendStart, exoPred=
   
   if(!missing(newdata)) {
     if(!inherits(newdata, c("data.frame", "matrix","zoo", "ts"))) stop("Arg 'newdata' should be of class data.frame, matrix, zoo or ts")
-    if(nrow(newdata)!=lag) stop("Please provide newdata with nrow=lag")
+    if(nrow(newdata)!=lag) stop(paste0("Please provide newdata with nrow=lag=", lag))
     starting <-  newdata 
   }
   
@@ -345,7 +346,7 @@ predict2.VECM <- function(object, newdata, n.ahead=5, newdataTrendStart, exoPred
   
   if(!missing(newdata)) {
     if(!inherits(newdata, c("data.frame", "matrix","zoo", "ts"))) stop("Arg 'newdata' should be of class data.frame, matrix, zoo or ts")
-    if(nrow(newdata)!=lag) stop("Please provide newdata with nrow=lag") 
+    if(nrow(newdata)!=lag) stop(paste0("Please provide newdata with nrow=lag=", lag)) 
     starting <-  newdata 
   }
   

@@ -4,14 +4,25 @@
 \alias{TVECM}
 \title{Threshold Vector Error Correction model (VECM)}
 \usage{
-TVECM(data, lag = 1, nthresh = 1, trim = 0.05, ngridBeta = 50,
-  ngridTh = 50, plot = TRUE, th1 = list(exact = NULL, int = c("from",
-  "to"), around = "val"), th2 = list(exact = NULL, int = c("from", "to"),
-  around = "val"), beta = list(exact = NULL, int = c("from", "to"), around =
-  c("val", "by")), restr = c("none", "equal", "signOp"), common = c("All",
-  "only_ECT"), include = c("const", "trend", "none", "both"),
-  dummyToBothRegimes = TRUE, beta0 = 0, methodMapply = FALSE,
-  trace = TRUE)
+TVECM(
+  data,
+  lag = 1,
+  nthresh = 1,
+  trim = 0.05,
+  ngridBeta = 50,
+  ngridTh = 50,
+  plot = TRUE,
+  th1 = list(exact = NULL, int = c("from", "to"), around = "val"),
+  th2 = list(exact = NULL, int = c("from", "to"), around = "val"),
+  beta = list(exact = NULL, int = c("from", "to"), around = c("val", "by")),
+  restr = c("none", "equal", "signOp"),
+  common = c("All", "only_ECT"),
+  include = c("const", "trend", "none", "both"),
+  dummyToBothRegimes = TRUE,
+  beta0 = 0,
+  methodMapply = FALSE,
+  trace = TRUE
+)
 }
 \arguments{
 \item{data}{time series}
@@ -27,7 +38,7 @@ observations in each regime}
 
 \item{ngridTh}{number of elements to search for the threshold value}
 
-\item{plot}{Whether the grid with the SSR of each threshold should be ploted.}
+\item{plot}{Whether the grid with the SSR of each threshold should be plotted.}
 
 \item{th1}{different possibilities to pre-specify an exact value, an interval
 or a central point for the search of the threshold (or first threshold if
@@ -39,7 +50,7 @@ point for the search of the second threshold (used only if nthresh=2)}
 \item{beta}{different possibilities to pre-specify an exact value, an
 interval or a central point for the search of the cointegrating value}
 
-\item{restr}{Currently not avalaible}
+\item{restr}{Currently not available}
 
 \item{common}{Whether the regime-specific dynamics are only for the ECT or
 for the ECT and the lags}
@@ -88,8 +99,8 @@ Fomby (1997).
 The grid for the threshold parameters can be set in different ways, through
 the argument \var{th1}, \var{th2} and \var{beta}:
 
-\describe{
-\item{exact:}{Pre-specified value (for beta: cointegrating vector will be c(1,\code{-beta}))}
+\describe{ 
+\item{exact:}{Pre-specified value (for beta: cointegrating vector will be c(1,\code{-beta}))} 
 \item{int:}{Specify an interval (of length \var{ngridTh}) in which to search.}
 \item{around:}{Specify to take \var{ngridTh} points around the value given. }
 }
@@ -110,8 +121,8 @@ data(zeroyld)
 
 tvec <- TVECM(zeroyld, nthresh=2,lag=1, ngridBeta=20, ngridTh=30, plot=TRUE,trim=0.05, common="All")
 
-#print(tvec)
-#summary(tvec)
+print(tvec)
+summary(tvec)
 
 #Obtain diverse infos:
 AIC(tvec)
@@ -120,7 +131,7 @@ BIC(tvec)
 res.tvec<-residuals(tvec)
 
 #export the equations as Latex:
-#toLatex(tvec)
+toLatex(tvec)
 
 }
 \references{

@@ -24,7 +24,34 @@
 #	mH: autoregressive order above the threshold ('High')
 #	nested: is this a nested call? (useful for correcting final model df)
 #	trace: should infos be printed?
-setar <- function(x, m, d=1, steps=d, series, mL,mM,mH, thDelay=0, mTh, thVar, th, trace=FALSE, nested=FALSE,include = c("const", "trend","none", "both"), common=c("none", "include","lags", "both"), model=c("TAR", "MTAR"), ML=seq_len(mL),MM=seq_len(mM), MH=seq_len(mH), nthresh=1,trim=0.15, type=c("level", "diff", "ADF"), restriction=c("none","OuterSymAll","OuterSymTh") ){
+setar <- function(x, m, d=1, steps=d, series, mL,mM,mH, thDelay=0, mTh, thVar, th, trace=FALSE, nested=FALSE,
+                  include = c("const", "trend","none", "both"), common=c("none", "include","lags", "both"),
+                  model=c("TAR", "MTAR"),
+                  ML=seq_len(mL),MM=seq_len(mM), MH=seq_len(mH), nthresh=1,
+                  trim=0.15,
+                  type=c("level", "diff", "ADF"),
+                  restriction=c("none","OuterSymAll","OuterSymTh")
+                  # warn_min_obs=TRUE,
+                  # warn_root=TRUE
+                  ){
+  
+  args <- as.list(match.call())
+  args[[1]] <- NULL
+  args_all <- append(args, list(warn_min_obs=TRUE,
+                                warn_root=TRUE))
+  do.call(setar_low, args_all, envir = parent.frame())
+}
+  
+
+setar_low <- function(x, m, d=1, steps=d, series, mL,mM,mH, thDelay=0, mTh, thVar, th, trace=FALSE, nested=FALSE,
+                  include = c("const", "trend","none", "both"), common=c("none", "include","lags", "both"),
+                  model=c("TAR", "MTAR"),
+                  ML=seq_len(mL),MM=seq_len(mM), MH=seq_len(mH), nthresh=1,
+                  trim=0.15,
+                  type=c("level", "diff", "ADF"),
+                  restriction=c("none","OuterSymAll","OuterSymTh"),
+                  warn_min_obs=FALSE,
+                  warn_root=FALSE){
 # 1: preliminaries
 # 2:  Build the regressors matrix and Y vector
 # 3: Set-up of transition variable
@@ -244,7 +271,7 @@ z<-as.matrix(z)
   regime <- c(rep(NA,length(x)-length(reg)), reg)
     
   nobs<-na.omit(c(mean(isL),mean(isM),mean(isH)))	#N of obs in each regime
-  if(min(nobs)<trim-0.01){
+  if(min(nobs)<trim-0.01 & warn_min_obs){
     warning("\nWith the threshold you gave (", th, ") there is a regime with less than trim=",100*trim,"% observations (",paste(round(100*nobs,2), "%, ", sep=""), ")\n", call.=FALSE)
   }
   if(min(nobs)==0)
@@ -264,11 +291,19 @@ z<-as.matrix(z)
 
 	 
   if(nthresh==1){
-    funBuild1<-switch(common, "include"=buildXth1Common, "none"=buildXth1NoCommon, "both"=buildXth1LagsIncCommon, "lags"=buildXth1LagsCommon)
-    xxLH<-funBuild1(gam1=th, thDelay=0, xx=xx,trans=transV, ML=exML, MH=exMH,const, trim=trim)
+    funBuild1 <-switch(common,
+                       "include" = buildXth1Common,
+                       "none" = buildXth1NoCommon,
+                       "both" = buildXth1LagsIncCommon,
+                       "lags" = buildXth1LagsCommon)
+    xxLH <- funBuild1(gam1=th, thDelay=0, xx=xx,trans=transV, ML=exML, MH=exMH,const, trim=trim, trace = trace)
   } else{
-    funBuild2<-switch(common, "include"=buildXth2Common, "none"=buildXth2NoCommon, "both"=buildXth2LagsIncCommon, "lags"=buildXth2LagsCommon)
-    xxLH<-funBuild2(gam1=th[1],gam2=th[2],thDelay=0,xx=xx,trans=transV, ML=exML, MH=exMH, MM=exMM,const,trim=trim)
+    funBuild2 <- switch(common,
+                        "include" = buildXth2Common,
+                        "none" = buildXth2NoCommon,
+                        "both" = buildXth2LagsIncCommon,
+                        "lags" = buildXth2LagsCommon)
+    xxLH <- funBuild2(gam1=th[1],gam2=th[2],thDelay=0,xx=xx,trans=transV, ML=exML, MH=exMH, MM=exMM,const,trim=trim, trace = trace)
   }
 
 ### SETAR 6: compute the model, extract and name the vec of coeff
@@ -310,10 +345,10 @@ z<-as.matrix(z)
 
 ###check for unit roots
   if(type=="level"){
-    isRootH<-isRoot(res$coefficients, regime="H", lags=MH)
-    isRootL<-isRoot(res$coefficients, regime="L", lags=ML)
+    isRootH <- root_oneReg(res$coefficients, regime = "H", lags = MH, warn_root = warn_root)
+    isRootL <- root_oneReg(res$coefficients, regime = "L", lags = ML, warn_root = warn_root)
     if(nthresh==2)
-      isRootM<-isRoot(res$coefficients, regime="M", lags=MM)
+      isRootM <- root_oneReg(res$coefficients, regime = "M", lags = MM, warn_root = warn_root)
   }
 
 ### SETAR 7: return the infos
@@ -354,6 +389,7 @@ z<-as.matrix(z)
 	  fitted.values=res$fitted.values,
 	  residuals=res$residuals,
 	  k=res$k,
+	  include = include,
 	  model=data.frame(yy,xxLH),
 	  model.specific=res), "setar"))
 	#}
@@ -392,7 +428,7 @@ getArNames<-function(ML, type=c("level", "diff", "ADF")){
   }
 }
 
-#' @S3method print setar
+#' @export
 print.setar <- function(x, ...) {
   NextMethod(...)
   x.old <- x
@@ -451,7 +487,7 @@ print.setar <- function(x, ...) {
   invisible(x)
 }
 
-#' @S3method summary setar
+#' @export
 summary.setar <- function(object, ...) {
   ans <- list()
   mod <- object$model.specific
@@ -479,17 +515,17 @@ summary.setar <- function(object, ...) {
   tval <- est/se			# t values
   coef <- cbind(est, se, tval, 2*pt(abs(tval), n-p, lower.tail = FALSE))
   dimnames(coef) <- list(names(est), c(" Estimate"," Std. Error"," t value","Pr(>|t|)"))
-  ans$coef <- coef
+  ans$coefficients <- coef
   ans$mTh <- mod$mTh
   extend(summary.nlar(object), "summary.setar", listV=ans)
 }
 
-#' @S3method print summary.setar
+#' @export
 print.summary.setar <- function(x, digits=max(3, getOption("digits") - 2),
 	signif.stars = getOption("show.signif.stars"), ...) {
 	NextMethod(digits=digits, signif.stars=signif.stars, ...)
 	cat("\nCoefficient(s):\n\n")
-	printCoefmat(x$coef, digits = digits, signif.stars = signif.stars, ...)		
+	printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars, ...)		
 	cat("\nThreshold")
 	cat("\nVariable: ")
         if(x$externThVar)
@@ -509,15 +545,25 @@ print.summary.setar <- function(x, digits=max(3, getOption("digits") - 2),
 	invisible(x)
 }
 
-#' @S3method coef setar
+#' @export
 #Coef() method: hyperCoef=FALSE won't show the threshold coef
-coef.setar <- function(object, hyperCoef=TRUE, ...){
+coef.setar <- function(object, hyperCoef=TRUE, regime = c("all", "L", "M", "H"), ...){
+  regime <-  match.arg(regime)
   co <- object$coefficients
-  if(!hyperCoef) co <- head(co, -length(getTh(object)))
+  
+  ## hyper coef: do not return th
+  if(!hyperCoef) co <- head(co, -length(getTh(object)))  
+  
+  ## select only one regime if requested
+  if(regime != "all") {
+    if(regime=="M" & object$model.specific$nthresh==1) stop("No M regime if nthresh==1")
+    pattern <- paste(c("const.", "trend.", "phi"), regime, sep="")
+    co <- co[grepl(paste(pattern, collapse = "|"), names(co))]
+  }
   co
 }
 
-#' @S3method vcov setar
+#' @export
 vcov.setar <- function(object,hyperCoef=TRUE, ...){
   mod <- object$model.specific
   
@@ -546,7 +592,7 @@ vcov.setar <- function(object,hyperCoef=TRUE, ...){
   return(res)
 }
 
-#' @S3method plot setar
+#' @export
 plot.setar <- function(x, ask=interactive(), legend=FALSE, regSwStart, regSwStop, ...) {
   op <- par(no.readonly=TRUE)
   on.exit(par(op))
@@ -672,8 +718,7 @@ oneStep.setar <- function(object, newdata, itime, thVar, ...){
 #' mod.setar <- setar(log10(lynx), m=2, thDelay=1, th=3.25)
 #' toLatex(mod.setar)
 #'
-#' @method toLatex setar 
-#' @S3method toLatex setar 
+#' @export
 toLatex.setar <- function(object, digits=3, label, ...) {
   obj <- object
   mod<-obj$model.specific

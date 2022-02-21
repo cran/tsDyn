@@ -33,8 +33,7 @@ VARrep  <- function (object, ...)
   UseMethod("VARrep")
 
 #' @rdname VARrep
-#' @method VARrep VECM
-#' @S3method VARrep VECM
+#' @export
 VARrep.VECM <- function(object, ...) {
 
   lag <- object$lag
@@ -101,8 +100,7 @@ VARrep.VECM <- function(object, ...) {
 }
 
 #' @rdname VARrep
-#' @method VARrep VAR
-#' @S3method VARrep VAR
+#' @export
 VARrep.VAR <- function(object, ...) {
 
   I <- attr(object, "varsLevel")
@@ -159,7 +157,7 @@ return(res)
 ############################################################
 
 
-
+#' @importClassesFrom urca ca.jo
 vec2var.tsDyn <- function(x){
 
   model <- if(inherits(x,"VECM")) "VECM" else "VAR"
@@ -173,11 +171,11 @@ vec2var.tsDyn <- function(x){
     LRinclude <- x$model.specific$LRinclude
     if(LRinclude!="none"){
       if(LRinclude=="const"){
-	include <- "const"
+        include <- "const"
       } else if(LRinclude=="trend"){
-	include <- if(include=="const") "both" else "trend"
+        include <- if(include=="const") "both" else "trend"
       } else if(LRinclude=="both"){
-	include <- "both"
+        include <- "both"
       }
     }
   }
@@ -195,7 +193,7 @@ vec2var.tsDyn <- function(x){
 
 ## A
   A <- list()
-  for(i in 1:lag) A[[i]] <- co[,grep(paste("\\.l", i, sep=""), colnames(co)), drop=FALSE]
+  for(i in 1:lag) A[[i]] <- co[,grep(paste("\\.l", i, "$", sep=""), colnames(co)), drop=FALSE]
   names(A) <- paste("A", 1:lag, sep="")
 
 ## Rank
@@ -246,74 +244,9 @@ predictOld.VECM <- function(object,...){
  predict(vec2var.tsDyn(object), ...)
 }
 
-#' @export irf
-#' @S3method irf nlVar
-irf.nlVar <- function(x, impulse=NULL, response=NULL, n.ahead=10, ortho=TRUE, cumulative=FALSE, boot=TRUE, ci=0.95, runs=100, seed=NULL, ...){
-  model <- attr(x, "model")
-  if(model=="VECM"){
-    LRinc <- x$model.specific$LRinclude
-    inc <- x$include
-    if(LRinc=="both"|inc=="none"&LRinc=="none") stop("Sorry, irf() is not available for this specification of deterministic terms.")
-  }
- irf(vec2var.tsDyn(x), impulse=impulse, response=response, n.ahead = n.ahead, ortho=ortho, cumulative=cumulative, boot=boot, ci=ci, runs=runs, seed=seed, ...)
-}
-
-#' @export fevd
-#' @S3method fevd nlVar
-fevd.nlVar <- function(x, n.ahead=10, ...){
-  model <- attr(x, "model")
-  if(model=="VECM"){
-    LRinc <- x$model.specific$LRinclude
-    inc <- x$include
-    if(LRinc=="both"|inc=="none"&LRinc=="none") warning("Not guaranted to work with this specification of deterministic terms.")
-  }
- fevd(vec2var.tsDyn(x),n.ahead=n.ahead, ...)
-}
 
 
-####### Predict 
 
-
-# predict.VECMMiddleold <- function(object, newdata, n.ahead=5, ...){
-#   lag <- object$lag
-#   k <- object$k
-#   include <- object$include
-#   LRinclude <- object$model.specific$LRinclude
-# 
-# ## get VAR rrepresentation
-#   B <- VARrep(object)
-# 
-# ## check deterministc specification
-#   if(LRinclude!="none"){
-#     if(LRinclude=="const"){
-#       include <- "const"
-#     } else if(LRinclude=="trend"){
-#       include <- if(include=="const") "both" else "trend"
-#     } else if(LRinclude=="both"){
-#       include <- "both"
-#     }
-#   }
-# ## setup starting values (data in y), innovations (0)
-#   original.data <- object$model[,1:k]
-#   starting <-  myTail(original.data,lag+1) 
-#   innov <- matrix(0, nrow=n.ahead, ncol=k)
-# 
-#   if(!missing(newdata)) {
-#     if(!inherits(newdata, c("data.frame", "matrix","zoo", "ts"))) stop("Arg 'newdata' should be of class data.frame, matrix, zoo or ts")
-#     if(nrow(newdata)!=lag+1) stop("Please provide newdata with nrow=lag+1 (note lag=p in VECM representation corresponds to p+1 in VAR rep)")
-#     starting <-  newdata 
-#   }
-# 
-# ## use VAR sim
-#   res <- VAR.sim2(B=B, lag=lag+1, n=n.ahead, starting=starting, innov=innov, include=include)
-# 
-# ## results
-#   colnames(res) <- colnames(original.data )
-#   res <- tail(res, n.ahead)
-#   rownames(res) <- (nrow(original.data)+1):(nrow(original.data)+n.ahead)
-# 
-#   return(res)
-# }
 
 
 myHead <- function(x, n=6){

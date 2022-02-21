@@ -9,8 +9,8 @@
 AR(m) model
 }
 \usage{
-	linear(x, m, d=1, steps=d, series, include = c( "const", "trend","none", "both"),
-        type=c("level", "diff", "ADF"))
+	linear(x, m, d=1, steps=d, series, include = c( "const", "trend","none", "both"), 
+        type=c("level", "diff", "ADF"), warn_root=TRUE)
 }
 \value{
 	A \code{\link{nlar}} object, \code{linear} subclass.
@@ -21,6 +21,7 @@ AR(m) model
 	\item{series}{ time series name (optional) }
 	\item{include}{Type of deterministic regressors to include}
 	\item{type}{Whether the variable is taken is level, difference or a mix (diff y= y-1, diff lags) as in the ADF test}
+	\item{warn_root}{Whether to check (and warn) for roots outside the unit circle?}
 }
 \details{
 AR(m) model:
@@ -37,6 +38,6 @@ AR(m) model:
 #fit an AR(2) model
 mod.linear <- linear(log(lynx), m=2)
 mod.linear
-#summary(mod.linear)
+summary(mod.linear)
 }
 \keyword{ ts }

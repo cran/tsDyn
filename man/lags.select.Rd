@@ -4,8 +4,13 @@
 \alias{lags.select}
 \title{Selection of the lag with Information criterion.}
 \usage{
-lags.select(data, lag.max = 10, include = c("const", "trend", "none",
-  "both"), fitMeasure = c("SSR", "LL"), sameSample = TRUE)
+lags.select(
+  data,
+  lag.max = 10,
+  include = c("const", "trend", "none", "both"),
+  fitMeasure = c("SSR", "LL"),
+  sameSample = TRUE
+)
 }
 \arguments{
 \item{data}{multivariate time series.}
@@ -36,10 +41,10 @@ This function selects the lag according to AIC, BIC and Hannan-Quinn.
 
 data(barry)
 
-#
+# 
 rk_sel <- lags.select(barry)
 rk_sel
-#summary(rk_sel)
+summary(rk_sel)
 
 
 }

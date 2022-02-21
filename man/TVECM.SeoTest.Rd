@@ -4,8 +4,16 @@
 \alias{TVECM.SeoTest}
 \title{No cointegration vs threshold cointegration test}
 \usage{
-TVECM.SeoTest(data, lag, beta, trim = 0.1, nboot, plot = FALSE,
-  hpc = c("none", "foreach"), check = FALSE)
+TVECM.SeoTest(
+  data,
+  lag,
+  beta,
+  trim = 0.1,
+  nboot,
+  plot = FALSE,
+  hpc = c("none", "foreach"),
+  check = FALSE
+)
 }
 \arguments{
 \item{data}{time series}
@@ -28,7 +36,7 @@ observations in each regime}
 should be the same as in the original data}
 }
 \value{
-A list cointaining diverse informations:
+A list containing diverse informations:
 
 Estimated threshold parameters and usual slope parameters.
 

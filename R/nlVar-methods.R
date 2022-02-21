@@ -1,20 +1,8 @@
-
-# unused!
-print.nlVar<-function(object,...){
-	if(object$model.specific$nthresh==0) 
-		cat("Linear VAR model\n")
-	else
-		cat("\n\nNon Linear Model\n")
-}
-
-### logLik.VAR see: Luetkepohl, 3.4.5 (p. 89), Juselius (2006) p. 56. Hamilton 11.1.10, p. 293 gives -t/2 log(solve(S))
-
-
 #'Extract Log-Likelihood
 #'
-#'Log-Likelihood method for VAR models.
+#'Log-Likelihood method for VAR and VECM models.
 #'
-#'The Log-Likelihood is computed as in Luetkepohl (2006) equ. 3.4.5 (p. 89) and
+#'For a VAR, the Log-Likelihood is computed as in Luetkepohl (2006) equ. 3.4.5 (p. 89) and
 #'Juselius (2006) p. 56:
 #'
 #'\deqn{ LL = -(TK/2) \log(2\pi) - (T/2) \log|\Sigma| - (1/2) \sum^{T} \left [
@@ -31,48 +19,7 @@ print.nlVar<-function(object,...){
 #'(Note that Hamilton (1994) 11.1.10, p. 293 gives \eqn{+ (T/2)
 #'\log|\Sigma^{-1}|}, which is the same as \eqn{-(T/2) \log|\Sigma|)}.
 #'
-#'@param object object of class \code{VAR} computed by \code{\link{lineVar}}.
-#'@param \dots additional arguments to \code{logLik}.
-#'@return Log-Likelihood value.
-#'@author Matthieu Stigler
-#'@references Hamilton (1994) \emph{Time Series Analysis}, Princeton University
-#'Press
-#'
-#'Juselius (2006) \emph{The Cointegrated VAR model: methodology and
-#'Applications}, Oxford Univesity Press
-#'
-#'Luetkepohl (2006) \emph{New Introduction to Multiple Time Series Analysis},
-#'Springer
-#'@keywords ts
-#'@examples
-#'
-#'data(zeroyld)
-#'data<-zeroyld
-#'
-#'#Fit a VAR
-#'VAR<-lineVar(data, lag=1)
-#'logLik(VAR)
-#'
-#' @method logLik nlVar
-#' @S3method logLik nlVar
-logLik.nlVar <- function(object,...){
-	resids<-object$residuals
-	k<-object$k
-	t<-object$t
-	Sigma<-matrix(1/t*crossprod(resids),ncol=k)
-# 	res <- -(t*k/2)*log(2*pi) - (t/2)* log(det(Sigma)) -1/2 *sum(diag(resids %*% solve(Sigma) %*% t(resids)))
-	res <- -(t*k/2)*log(2*pi) -t*k/2 - (t/2)* log(det(Sigma)) 
-	return(res)
-}
-
-### logLik.VECM see Hamilton 20.2.10, p. 637
-
-
-#'Extract Log-Likelihood
-#'
-#'Log-Likelihood method for VECM models.
-#'
-#'The Log-Likelihood is computed in two dfferent ways, depending on whether the
+#'For VECM, the Log-Likelihood is computed in two different ways, depending on whether the
 #'\code{VECM} was estimated with ML (Johansen) or 2OLS (Engle and Granger).
 #'
 #'When the model is estimated with ML, the LL is computed as in Hamilton (1994)
@@ -90,41 +37,69 @@ logLik.nlVar <- function(object,...){
 #'\log|\Sigma| }
 #'
 #'Where \eqn{\Sigma} is the variance matrix of residuals from the the VECM
-#'model. There is hence no correspondance between the LL from the VECM computed
+#'model. There is hence no correspondence between the LL from the VECM computed
 #'with 2OLS or ML.
 #'
-#'@param object object of class \code{VECM} computed by \code{\link{VECM}}.
-#'@param r The cointegrating rank. By default the rank specified in the call to
-#'\code{\link{VECM}}, but can be set differently by user.
+#'
+#'@param object object of class \code{VAR} computed by \code{\link{lineVar}}, or 
+#' class \code{VECM} computed by \code{\link{VECM}}.
 #'@param \dots additional arguments to \code{logLik}.
 #'@return Log-Likelihood value.
+#'@aliases  logLik.VAR
 #'@author Matthieu Stigler
 #'@references Hamilton (1994) \emph{Time Series Analysis}, Princeton University
 #'Press
+#'
+#'Juselius (2006) \emph{The Cointegrated VAR model: methodology and
+#'Applications}, Oxford Univesity Press
+#'
+#'Luetkepohl (2006) \emph{New Introduction to Multiple Time Series Analysis},
+#'Springer
 #'@keywords ts
 #'@examples
 #'
 #'data(zeroyld)
-#'data<-zeroyld
 #'
 #'#Fit a VAR
-#'vecm<-VECM(data, lag=1,r=1, estim="ML")
+#'VAR <- lineVar(zeroyld, lag=1)
+#'logLik(VAR)
+#'
+#'#'#Fit a VECM
+#'vecm <- VECM(zeroyld, lag=1, r=1, estim="ML")
 #'logLik(vecm)
 #'
-#' @method logLik VECM
-#' @S3method logLik VECM
+#' @export
+logLik.nlVar <- function(object,...){
+	resids<-object$residuals
+	k<-object$k
+	t<-object$t
+	Sigma<-matrix(1/t*crossprod(resids),ncol=k)
+# 	res <- -(t*k/2)*log(2*pi) - (t/2)* log(det(Sigma)) -1/2 *sum(diag(resids %*% solve(Sigma) %*% t(resids)))
+	res <- -(t*k/2)*log(2*pi) -t*k/2 - (t/2)* log(det(Sigma)) 
+	return(res)
+}
+
+
+
+### logLik.VAR see: Luetkepohl, 3.4.5 (p. 89), Juselius (2006) p. 56. Hamilton 11.1.10, p. 293 gives -t/2 log(solve(S))
+### logLik.VECM see Hamilton 20.2.10, p. 637
+
+#'@rdname logLik.nlVar
+#'@param r The cointegrating rank. By default the rank specified in the call to
+#'\code{\link{VECM}}, but can be set differently by user.
+#' @export
 logLik.VECM <- function(object,r,...){
   t<-object$t
   k<-object$k
   
   if(object$model.specific$estim=="ML"){
-    S00<-object$model.specific$S00/t
-    lambda<-object$model.specific$lambda
+    S00 <- object$model.specific$S00 / t
+    lambda <- object$model.specific$lambda
     Rank <- if(missing(r)) object$model.specific$r else r
-    seq<-if(Rank==0) 0 else if(Rank%in%1:k) 1:Rank else warning("r cann't be greater than k (number of variables)")
+    seq<-if(Rank==0) 0 else if(Rank%in%1:k) 1:Rank else warning("r can't be greater than k (number of variables)")
     res <- -(t*k/2)*log(2*pi) - t*k/2 - (t/2)*log(det(S00)) - (t/2)*sum(log(1-lambda[seq]))
   } else {
-    Sigmabest<-matrix(1/t*crossprod(object$residuals),ncol=k)
+    Sigmabest <- matrix(1 / t * crossprod(object$residuals), ncol = k)
     res <- log(det(Sigmabest))
     if(!missing(r)) warning("Note this is computing the LL from a model estimated by 2 OLS\n")
   }
@@ -136,7 +111,7 @@ getP <- function(object) UseMethod("getP")
 getP.ca.jo <- function(object) object@P
 getP.cajo.test <- function(object) ncol(object@Z0)
 
-#' @S3method logLik ca.jo
+#' @export
 logLik.ca.jo <- function(object,r,...){
   t<-nrow(object@Z0)
   k<-getP(object)
@@ -156,7 +131,7 @@ logLik.ca.jo <- function(object,r,...){
   return(res)
 }
 
-#' @S3method logLik cajo.test
+#' @export
 logLik.cajo.test <- function(object,r,...) logLik.ca.jo(object=object, r=r,...)
 
 #### Small function: get number of estimated parameters
@@ -180,7 +155,7 @@ npar.VECM<-function(object, ..., r) {
   return(nPar)
 }
 
-#' @S3method AIC nlVar
+#' @export
 #### AIC criterions
 AIC.nlVar<-function(object,..., k=2, fitMeasure=c("SSR", "LL")){
 	fitMeasure <- match.arg(fitMeasure)
@@ -189,7 +164,7 @@ AIC.nlVar<-function(object,..., k=2, fitMeasure=c("SSR", "LL")){
 	fit+k*npar(object)
 }
 
-#' @S3method AIC VECM
+#' @export
 AIC.VECM<-function(object,..., k=2,r, fitMeasure=c("SSR", "LL")){
 	fitMeasure <- match.arg(fitMeasure)
 	Rank<-if(missing(r)) object$model.specific$r else r
@@ -198,7 +173,7 @@ AIC.VECM<-function(object,..., k=2,r, fitMeasure=c("SSR", "LL")){
 	fit+k*npar(object, r=Rank)
 }
 
-#' @S3method BIC nlVar
+#' @export
 #### BIC criterions
 BIC.nlVar<-function(object,..., k=log(object$t), fitMeasure=c("SSR", "LL")){
 	fitMeasure <- match.arg(fitMeasure)
@@ -207,7 +182,7 @@ BIC.nlVar<-function(object,..., k=log(object$t), fitMeasure=c("SSR", "LL")){
 	fit+k*npar(object)
 }
 
-#' @S3method BIC VECM
+#' @export
 BIC.VECM<-function(object,..., k=log(object$t),r, fitMeasure=c("SSR", "LL")){
 	fitMeasure <- match.arg(fitMeasure)
 	nVar<-object$k
@@ -217,13 +192,21 @@ BIC.VECM<-function(object,..., k=log(object$t),r, fitMeasure=c("SSR", "LL")){
 	fit+k*npar(object, r=Rank)
 }
 
-#' @S3method deviance nlVar
-deviance.nlVar<-function(object,...){
+#' @export
+deviance.nlVar<-function(object, ...){
 	as.numeric(crossprod(c(object$residuals)))
 }
 
-residuals.nlVar<-function(object,...){
-	object$residuals
+#' @export
+residuals.nlVar<-function(object, initVal=FALSE, ...){
+  resids <- object$residuals
+  
+  if(initVal) {
+    n_init <- object$T - object$t
+    resids <- rbind(matrix(NA,  nrow=n_init, ncol = object$k),
+                    resids)
+  } 
+  resids
 }
 
 #'fitted method for objects of class nlVar, i.e. VAR and VECM models.
@@ -274,7 +257,7 @@ residuals.nlVar<-function(object,...){
 #'
 #'
 
-#' @S3method fitted nlVar
+#' @export
 fitted.nlVar <- function(object, level=c("model", "original"),...){
 
   level <- match.arg(level)
@@ -296,9 +279,36 @@ fitted.nlVar <- function(object, level=c("model", "original"),...){
   return(res)
 }
 
-#' @S3method coef nlVar
-coef.nlVar<-function(object,...){
-	return(object$coefficients)
+## #' @param regime Optional, allows to extract regime-specific coefficients. 
+#' @export
+coef.nlVar <- function(object,  regime = c("all", "L", "M", "H"), ...){
+  regime <-  match.arg(regime)
+  co <- object$coefficients
+  commonInter <- object$model.specific$nthresh >0 & !is.list(co)
+  
+  ## select only one regime if requested
+  if(regime != "all") {
+    if(regime=="M" & object$model.specific$nthresh!=2) stop("No M regime if nthresh %in% 1, 2")
+    if(commonInter) {
+      # inc_terms <- switch(object$include, 
+      #                     "const" =1,
+      #                     "both" = 2,
+      #                     "trend" = 1,
+      #                     "none" = 0)
+      # get <- switch(regime, 
+      #               "L" = 1:object$lag * object$k,
+      #               "M" = object$lag * object$k)
+      # co <- co[inc_terms + object$lag * object$k]
+      # 
+      stop("Not implemented yet!")
+    } else {
+      co <- switch(regime, 
+                   "L" = co$Bdown, 
+                   "H" = co$Bup, 
+                   "M" = co$Bmiddle)
+    }
+  }
+  co
 }
 
 ### Method coefMat

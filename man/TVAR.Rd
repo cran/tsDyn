@@ -3,13 +3,28 @@
 \name{TVAR}
 \alias{TVAR}
 \alias{OlsTVAR}
-\title{Multivariate Threshold Autoregressive model}
+\title{Multivariate Threshold Vector Autoregressive model}
 \usage{
-TVAR(data, lag, include = c("const", "trend", "none", "both"),
-  model = c("TAR", "MTAR"), commonInter = FALSE, nthresh = 1,
-  thDelay = 1, mTh = 1, thVar, trim = 0.1, ngrid, gamma = NULL, around,
-  plot = FALSE, dummyToBothRegimes = TRUE, trace = TRUE, trick = "for",
-  max.iter = 2)
+TVAR(
+  data,
+  lag,
+  include = c("const", "trend", "none", "both"),
+  model = c("TAR", "MTAR"),
+  commonInter = FALSE,
+  nthresh = 1,
+  thDelay = 1,
+  mTh = 1,
+  thVar,
+  trim = 0.1,
+  ngrid,
+  gamma = NULL,
+  around,
+  plot = FALSE,
+  dummyToBothRegimes = TRUE,
+  trace = TRUE,
+  trick = "for",
+  max.iter = 2
+)
 }
 \arguments{
 \item{data}{time series}
@@ -22,7 +37,7 @@ TVAR(data, lag, include = c("const", "trend", "none", "both"),
 difference (MTAR)}
 
 \item{commonInter}{Whether the deterministic regressors are regime specific
-(commonInter=FALSE) or not.}
+(\code{commonInter}=FALSE) or not.}
 
 \item{nthresh}{Number of thresholds}
 
@@ -35,7 +50,7 @@ not t+1 as in univariate cases.}
 variable. Either a single value (indicating which variable to take) or a
 combination}
 
-\item{thVar}{external transition variable}
+\item{thVar}{Optional. External transition variable.}
 
 \item{trim}{trimming parameter indicating the minimal percentage of
 observations in each regime}
@@ -63,7 +78,8 @@ applied to each regime or not.}
 An object of class TVAR, with standard methods.
 }
 \description{
-Estimate a multivariate Threshold VAR
+Estimate a multivariate Threshold VAR (TVAR), either using lags as transition variable (default),
+or specifying an external variable.
 }
 \details{
 For fixed \code{th} and threshold variable, the model is linear, so
@@ -87,9 +103,10 @@ given delay, is there rather to check the consistency of the method nthresh=2
 
 data(zeroyld)
 
-tv <- TVAR(zeroyld, lag=2, nthresh=1, thDelay=1, trim=0.1, mTh=1, plot=FALSE)
+tv <- TVAR(zeroyld, lag=2, nthresh=2, thDelay=1, trim=0.1, mTh=1, plot=FALSE)
 
 print(tv)
+summary(tv)
 
 # a few useful methods:
 plot(tv)

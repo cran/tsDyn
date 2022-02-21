@@ -274,9 +274,11 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
       mTh <- rep(0,m)
       mTh[thDelay+1] <- 1
     }
-    res$mTh <- mTh
+  } else {
+    mTh <- rep(0, m)
   }
-  res$thVar <- c(rep(NA, length(x)-length(z)),z)
+  res$mTh <- mTh
+  res$thVar <- c(rep(NA, length(x)-length(z)), z)
   res$fitted <- F(coefs[coefnames_L], 
                   coefs[coefnames_H], gamma, th, type=1)
   res$residuals <- yy - res$fitted
@@ -306,7 +308,7 @@ lstar <- function(x, m, d=1, steps=d, series, mL, mH, mTh, thDelay,
 #############################################
   #Transition function G: moved to star.R
 
-#' @S3method print lstar
+#' @export
 print.lstar <- function(x, ...) {
   NextMethod(...)
   cat("\nLSTAR model\n")
@@ -343,7 +345,7 @@ print.lstar <- function(x, ...) {
   invisible(x)
 }
 
-#' @S3method summary lstar
+#' @export
 summary.lstar <- function(object, ...) {
   ans <- list()  
 
@@ -386,7 +388,7 @@ summary.lstar <- function(object, ...) {
   return(extend(summary.nlar(object), "summary.lstar", listV=ans))
 }
 
-#' @S3method print summary.lstar
+#' @export
 print.summary.lstar <- function(x, digits=max(3, getOption("digits") - 2),
                        signif.stars = getOption("show.signif.stars"), ...)
 {
@@ -411,7 +413,8 @@ print.summary.lstar <- function(x, digits=max(3, getOption("digits") - 2),
   invisible(x)
 }
 
-#' @S3method plot lstar
+#' @export
+#' @importFrom grDevices rgb
 plot.lstar <- function(x, ask=interactive(), legend=FALSE,
                        regSwStart, regSwStop, ...) {
   
@@ -474,15 +477,22 @@ plot.lstar <- function(x, ask=interactive(), legend=FALSE,
   invisible(x)
 }
 
-#' @S3method coef lstar
+#' @export
 #Coef() method: hyperCoef=FALSE won't show the threshold/slope coef
-coef.lstar <- function(object, hyperCoef=TRUE, ...){
+coef.lstar <- function(object, hyperCoef=TRUE, regime = c("all", "L", "H"), ...){
+  regime <-  match.arg(regime)
   co <- object$coefficients
+  
   if(!hyperCoef) co <- head(co, -2)
+  if(regime != "all") {
+    pattern <- paste(c("const.", "trend.", "phi"), regime, sep="")
+    co <- co[grepl(paste(pattern, collapse = "|"), names(co))]
+  }
+  
   co
 }
 
-#' @S3method vcov lstar
+#' @export
 vcov.lstar <- function(object, ...){
   n <- object$str$n.used
   coef<- object$coefficients
@@ -500,7 +510,7 @@ vcov.lstar <- function(object, ...){
 return(vc)
 }
 
-#' @S3method confint lstar
+#' @export
 confint.lstar <- function(object, parm, level = 0.95, ...){
   confint.default(object, parm=parm, level=level, ...)
 }

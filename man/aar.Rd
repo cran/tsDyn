@@ -39,7 +39,7 @@ aar(x, m, d=1, steps=d, series)
 #fit an AAR model:
 mod <- aar(log(lynx), m=3)
 #Summary informations:
-#summary(mod)
+summary(mod)
 #Diagnostic plots:
 plot(mod)
 }

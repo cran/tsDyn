@@ -11,7 +11,7 @@
 #'@param data multivariate time series.
 #'@param lag.max Maximum number of lags to investigate.
 #'@param r.max Maximum rank to investigate.
-#'@param include Type of deterministic regressors to innclude. See
+#'@param include Type of deterministic regressors to include. See
 #'\code{\link{VECM}} or \code{\link{lineVar}}.
 #'@param fitMeasure Whether the AIC/BIC should be based on the full likelihood,
 #'or just the SSR. See explanations in \code{\link{logLik.VECM}}.
@@ -172,8 +172,7 @@ lags.select <- function(data, lag.max=10, include = c( "const", "trend","none", 
 }
 
 #' @rdname rank.select
-#' @method print rank.select
-#' @S3method print rank.select
+#' @export
 print.rank.select <- function(x,...){
 
   AIC_rank_info <- if(nrow(x$AICs)>1) paste("rank=",x$AIC_min[1,"rank"])
@@ -186,8 +185,22 @@ print.rank.select <- function(x,...){
 }
 
 #' @rdname rank.select
-#' @method summary rank.select
-#' @S3method summary rank.select
+#' @export
+as.data.frame.rank.select <- function(x,...){
+  
+  rs_mins_list <-  lapply(x[c("AIC_min", "BIC_min", "HQ_min")], as.data.frame)
+  rs_mins_df <- do.call("rbind", rs_mins_list)
+  
+  ## add criterion
+  rs_mins_df$criterion <-  c("AIC", "BIC", "HQ")
+  
+  ## clean
+  rownames(rs_mins_df) <- NULL
+  rs_mins_df[, c("criterion", "rank", "lag")]
+}
+
+#' @rdname rank.select
+#' @export
 summary.rank.select <- function(object,...){
 
   print.rank.select(object)
@@ -195,7 +208,7 @@ summary.rank.select <- function(object,...){
   cat("\nBest number of lags:\n")
   AIC_minlag<-apply(object$AICs, 1, which.min)
   BIC_minlag<-apply(object$BICs, 1, which.min)
-  HQ_minlag<-apply(object$BICs, 1, which.min)
+  HQ_minlag<-apply(object$HQs, 1, which.min)
 
   mat <- rbind(AIC_minlag, BIC_minlag,HQ_minlag)
   dimnames(mat) <- list(c("AIC", "BIC", "HQ"), paste("r", if(nrow(object$BICs)==1) 0 else 0:(nrow(object$BICs)-1), sep="="))

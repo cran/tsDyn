@@ -4,14 +4,22 @@
 \alias{rank.select}
 \alias{summary.rank.select}
 \alias{print.rank.select}
-\alias{summary.rank.select}
+\alias{as.data.frame.rank.select}
 \title{Selection of the cointegrating rank with Information criterion.}
 \usage{
-rank.select(data, lag.max = 10, r.max = ncol(data) - 1,
-  include = c("const", "trend", "none", "both"), fitMeasure = c("SSR",
-  "LL"), sameSample = TRUE, returnModels = FALSE)
+rank.select(
+  data,
+  lag.max = 10,
+  r.max = ncol(data) - 1,
+  include = c("const", "trend", "none", "both"),
+  fitMeasure = c("SSR", "LL"),
+  sameSample = TRUE,
+  returnModels = FALSE
+)
 
 \method{print}{rank.select}(x, ...)
+
+\method{as.data.frame}{rank.select}(x, ...)
 
 \method{summary}{rank.select}(object, ...)
 }
@@ -22,7 +30,7 @@ rank.select(data, lag.max = 10, r.max = ncol(data) - 1,
 
 \item{r.max}{Maximum rank to investigate.}
 
-\item{include}{Type of deterministic regressors to innclude. See
+\item{include}{Type of deterministic regressors to include. See
 \code{\link{VECM}} or \code{\link{lineVar}}.}
 
 \item{fitMeasure}{Whether the AIC/BIC should be based on the full likelihood,
@@ -59,10 +67,10 @@ to be useful to select simultaneously the rank and the lags, see references.
 
 data(barry)
 
-#
+# 
 rk_sel <- rank.select(barry)
 rk_sel
-#summary(rk_sel)
+summary(rk_sel)
 
 
 }

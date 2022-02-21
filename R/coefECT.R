@@ -10,7 +10,7 @@
 #'   \describe{
 #'    \item{A}{Adjustment coefficients, of dim \eqn{K \times r}}
 #'    \item{B}{Cointegrating coefficients, of dim \eqn{K \times r}}
-#'    \item{Pi}{Matrix \eqn{\Pi=A\dot B^{'}}, of dim \eqn{K \times K}}
+#'    \item{Pi}{Matrix \eqn{\Pi=A B^{'}}, of dim \eqn{K \times K}}
 #'    }
 #'    Coefficients are extracted from a VECM in package \code{tsDyn}, or from a VECM 
 #'    obtained in package \code{urca} from \code{\link[urca]{ca.jo}} or \code{\link[urca]{cajorls}}. 
@@ -22,13 +22,14 @@
 #'    The normalization is the Phillips triangular representation,  as suggested by Johansen (1995, p. 72), 
 #'    standardising  the first \eqn{r\times r} coefficients to \eqn{I_r}:
 #'    \describe{
-#'      \item{B}{\eqn{B_{norm}=B (c^{'}B)^{-1}} with \eqn{c=(I_r,0_{p-r,r})^{'}}}
-#'      \item{A}{\eqn{A_{norm}=B^{'}c}}
+#'      \item{B}{\eqn{B_{norm}=B (c^{'}B)^{-1}} with \eqn{c=(I_r,0_{K-r,r})^{'}}}
+#'      \item{A}{\eqn{A_{norm}=AB^{'}c}}
 #'    }
 #'    Finally, note that the function also apply to objects obtained from tests of class 
 #'    \code{ca.jo.test} (from \code{\link[urca]{blrtest}} etc...). Care should be taken 
 #'    however, since the normalization might override the restrictions imposed. 
 #' @return A matrix containing the coefficients 
+#' @references Johansen, Soren, (1995), Likelihood-Based Inference in Cointegrated Vector Autoregressive Models, Oxford University Press
 #' @export
 #' @examples
 #' data(barry)
@@ -62,13 +63,12 @@
 coefB <- function(object, ...) UseMethod("coefB")
 
 #' @rdname coefB
-#' @method coefB VECM
-#' @S3method coefB VECM
+#' @export
 coefB.VECM <- function(object,...){
   object$model.specific$beta
 }
 
-#' @S3method coefB list
+#' @export
 coefB.list <- function(object,...){
   if(all(names(object)==c("rlm","beta"))){
     return(object$beta)
@@ -78,8 +78,7 @@ coefB.list <- function(object,...){
 }
 
 #' @rdname coefB
-#' @method coefB ca.jo
-#' @S3method coefB ca.jo
+#' @export
 # Normalize by b (Z')-1, with  (Z')-1 = (C'B)-1, c: (diag|0) 
 #' @param r The cointegrating rank
 #' @param normalize Whether to normalize the A/B coefficients. See details
@@ -94,7 +93,7 @@ coefB.ca.jo <- function(object,r=1, normalize=TRUE, ...){
   beta
 }
 
-#' @S3method coefB cajo.test
+#' @export
 coefB.cajo.test <- function(object,r=1, normalize=TRUE, ...) 
   coefB.ca.jo(object=object,r=r, normalize=normalize, ...)
 
@@ -103,14 +102,13 @@ coefB.cajo.test <- function(object,r=1, normalize=TRUE, ...)
 coefA <- function(object, ...) UseMethod("coefA")
 
 #' @rdname coefB
-#' @method coefA VECM
-#' @S3method coefA VECM
+#' @export
 coefA.VECM <- function(object,...){
   r <- object$model.specific$r
   coef(object)[,1:r, drop=FALSE]
 }
 
-#' @S3method coefA list
+#' @export
 coefA.list <- function(object,...){
   if(all(names(object)==c("rlm","beta"))){
     r <- ncol(object$beta)
@@ -121,8 +119,7 @@ coefA.list <- function(object,...){
 }
 
 #' @rdname coefB
-#' @method coefA ca.jo
-#' @S3method coefA ca.jo
+#' @export
 # BETA: Normalize by b (Z')-1, with  (Z')-1 = (C'B)-1, c: (diag|0)
 # ALPHA: Normalize by Z, i.e. B'C, 
 coefA.ca.jo <- function(object,r=1, normalize=TRUE, ...){
@@ -137,7 +134,7 @@ coefA.ca.jo <- function(object,r=1, normalize=TRUE, ...){
   alpha
 }
 
-#' @S3method coefA cajo.test
+#' @export
 coefA.cajo.test <- function(object,r=1, normalize=TRUE, ...) 
   coefA.ca.jo(object=object,r=r, normalize=normalize, ...)
 
@@ -145,19 +142,19 @@ coefA.cajo.test <- function(object,r=1, normalize=TRUE, ...)
 #' @export
 coefPI <- function(object, ...) UseMethod("coefPI")
 
-#' @S3method coefPI default
+#' @export
 coefPI.default <- function(object, ...){
   coefA(object)%*%t(coefB(object))
 }
 
-#' @S3method coefPI ca.jo
+#' @export
 coefPI.ca.jo <- function(object,r=1, normalize=TRUE, ...){
   alpha <- object@W[,1:r,drop=FALSE]
   beta <- object@V[,1:r,drop=FALSE]
   alpha%*%t(beta)
 }    
 
-#' @S3method coefPI cajo.test
+#' @export
 coefPI.cajo.test <- function(object,r=1, normalize=TRUE, ...) 
   coefPI.ca.jo(object=object,r=r, normalize=normalize, ...)
 

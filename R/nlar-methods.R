@@ -1,4 +1,48 @@
-## Copyright (C) 2005, 2006, 2007/2006, 2008  Antonio, Fabio Di Narzo
+#' NLAR methods
+#' 
+#' Generic \sQuote{nlar} methods. Method \sQuote{nlar} is described in a
+#' separate page: \code{\link{nlar}}
+#' 
+#' \describe{ 
+#'   \item{MAPE}{ Mean Absolute Percent Error } 
+#'   \item{mse}{ Mean Square Error } 
+#'   \item{plot}{ Diagnostic plots } }
+#' 
+#' @param x,object fitted \sQuote{nlar} object
+#' @param ask graphical option. See \code{\link{par}}
+#' @param digits For print method, see \code{\link{printCoefmat}}.
+#' @param label LaTeX label passed to the equation
+#' @param \dots further arguments to be passed to and from other methods
+#' @author Antonio, Fabio Di Narzo
+#' @seealso \code{\link{availableModels}} for listing all currently available
+#' models.
+#' @keywords ts
+#' @examples
+#' 
+#' x <- log10(lynx)
+#' mod.setar <- setar(x, m=2, thDelay=1, th=3.25)
+#' mod.setar
+#' AIC(mod.setar)
+#' mse(mod.setar)
+#' MAPE(mod.setar)
+#' coef(mod.setar)
+#' summary(mod.setar)
+#' 
+#' e <- residuals(mod.setar)
+#' e <- e[!is.na(e)]
+#' plot(e)
+#' acf(e)
+#' 
+#' plot(x)
+#' lines(fitted(mod.setar), lty=2)
+#' legend(x=1910, y=3.9,lty=c(1,2), legend=c("observed","fitted"))
+#' 
+#' plot(mod.setar)
+#'
+#' @name nlar-methods
+NULL
+
+## Copyright (C) 2005, 2006, 2007/2006, 2008, 2018  Antonio, Fabio Di Narzo
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -14,6 +58,8 @@
 ## http://www.gnu.org/copyleft/gpl.html.  You can also obtain it by
 ## writing to the Free Software Foundation, Inc., 59 Temple Place,
 ## Suite 330, Boston, MA  02111-1307  USA.
+
+
 
 nlar.struct <- function(x, m, d=1, steps=d, series) {
   
@@ -92,7 +138,7 @@ getNUsed.nlar <- function(obj, ...)
 
 #'Non-linear time series model, base class definition
 #'
-#'Generic non-linear autogregressive model class constructor.
+#'Generic non-linear autoregressive model class constructor.
 #'
 #'Constructor for the generic \code{nlar} model class. On a fitted object you
 #'can call some generic methods. For a list of them, see
@@ -145,19 +191,25 @@ nlar <- function(str, coefficients, fitted.values, residuals, k, model,
                 ))
 }
 
-#' @S3method print nlar
+
+#' @export
 #Print nlar object
 print.nlar <- function(x, digits = max(3, getOption("digits") - 3), ...) {
   cat("\nNon linear autoregressive model\n")
   invisible(x)
 }
 
-#' @S3method coef nlar
-#Coefficients of a nlar.fit object
-coef.nlar <- function(object, ...)
-  object$coefficients
+#'@rdname nlar-methods
+#' @export
+#Coefficients of a nlar.fit object (actually only for aar, as setar and lstar have dedicated one)
+coef.nlar <- function(object,  ...){
+  co <- object$coefficients
+  co
+}
+  
 
-#' @S3method fitted nlar
+#'@rdname nlar-methods
+#' @export
 #Fitted values for the fitted nlar object
 fitted.nlar <- function(object, ...) {
   ans <- c(rep(NA, object$str$n.used - length(object$fitted.values)), object$fitted.values)
@@ -166,212 +218,58 @@ fitted.nlar <- function(object, ...) {
   ans
 }
 
-#' @S3method residuals nlar
+#'@rdname nlar-methods
+#' @template param_timeAttr
+#' @template param_initVal
+#' @export
 #Observed residuals for the fitted nlar object
-residuals.nlar <- function(object, ...) {
+residuals.nlar <- function(object, initVal=TRUE, timeAttr = TRUE, ...) {
   str <- object$str
   data <- str$x
-  ans <- c(rep(NA, str$n.used - length(object$residuals) ), object$residuals)
-  tsp(ans) <- tsp(data)
-  ans <- as.ts(ans)
-  ans
-}
-
-#'Extract variable showing regime
-#'
-#'This function allows to extract the indicator variable specifying the regime
-#'in which the process is at time t.
-#'
-#'
-#'@aliases regime regime.default
-#'@param object object of class \code{setar} or \code{nlVar}
-#'@param initVal Logical. Whether the NA initial values should be returned.
-#'Default to TRUE.
-#'@param timeAttr Logical. Whether the time attributes should be returned.
-#'Default to TRUE.
-#'@param \dots additional arguments to \code{regime}
-#'@return Time series of same attributes as input to setar.
-#'@author Matthieu Stigler
-#'@keywords ts
-#'@export
-#'@export
-#'@examples
-#'
-#'set<-setar(lynx, m=3)
-#'regime(set)
-#'regime(set, time=FALSE, initVal=FALSE)
-#'
-#'plot(regime(set))
-#'
-
-#indicator of the regime of the obs
-regime <- function (object, initVal=TRUE,timeAttr=TRUE,...)  
-  UseMethod("regime")
-
-regime.default <- function(object, initVal=TRUE,timeAttr=TRUE,...)
-  NULL
-
-#' @S3method regime setar
-regime.setar <- function(object,initVal=TRUE,timeAttr=TRUE,...) {
-  reg<-object$model.specific$regime
-  str <- object$str
+  resids <- object$residuals
+  n_init <- str$n.used - length(resids)
   
-  if(timeAttr){
-    attributes(reg) <- object$model.specific$timeAttributes
-    if(initVal) {
-      ans <- reg
-    } else {
-      ans <- window(reg, start=time(reg)[length(str$x)-length(str$yy)+1])
-    }
+  if(initVal) {
+    res <- c(rep(NA,  n_init), resids)  
   } else {
-    if(initVal){
-      ans <- reg
-    } else {
-      ans <- reg[-c(1:(length(str$x)-length(str$yy)))]
-    }
+    res <- resids
   }
   
-  return(ans)
-}
-            
-#' @S3method regime nlVar           
-regime.nlVar <- function(object,initVal=TRUE,timeAttr=TRUE,...) {
-  reg<-object$model.specific$regime
-  
-  if(timeAttr){
-    attributes(reg) <- object$model.specific$timeAttributes
-    if(initVal) {
-      ans <- reg
-    } else {
-      ans <- window(reg, start=time(reg)[object$T-object$t+1])
+  if(timeAttr) {
+    if(!initVal) {
+      data <- tail(data, -n_init)
     }
-  } else {
-    if(initVal){
-      ans <- reg
-    } else {
-      ans <- reg[-c(1:(object$T-object$t))]
-    }
+    tsp(res) <- tsp(data)
+    res <- as.ts(res)
   }
   
-  return(ans)
+  res
 }
 
-#' @S3method regime lstar
-regime.lstar <- function(object, initVal=TRUE,timeAttr=TRUE,discretize=TRUE, ...){
 
-  thVar <- object$model.specific$thVar
-  str <- object$str
-
-  reg <- G(z=thVar, gamma=coef(object)["gamma"], th=getTh(object))
-
-  if(discretize) {
-    reg <- ifelse(reg <=0.5, 1,2)
-  }
-
-  if(timeAttr){
-    attributes(reg) <- object$model.specific$timeAttributes
-    if(initVal) {
-      ans <- reg
-    } else {
-      ans <- window(reg, start=time(reg)[length(str$x)-length(str$yy)+1])
-    }
-  } else {
-    if(initVal){
-      ans <- reg
-    } else {
-      ans <- reg[-c(1:(length(str$x)-length(str$yy)))]
-    }
-  }
-
-  return(ans)
-
+if(FALSE) {
+  library(tsDyn)
+  linear_l2_none <- linear(lh, m = 2, include = "none")
+  residuals(linear_l2_none)
+  residuals(linear_l2_none, timeAttr = FALSE)
+  residuals(linear_l2_none, initVal = FALSE)
+  residuals(linear_l2_none, initVal = FALSE, timeAttr = FALSE)
+  
+  linear_l2_none_num <- linear(as.numeric(lh), m = 2, include = "none")
+  residuals(linear_l2_none_num)
+  residuals(linear_l2_none_num, timeAttr = FALSE)
+  residuals(linear_l2_none_num, initVal = FALSE)
+  residuals(linear_l2_none_num, initVal = FALSE, timeAttr = FALSE)
 }
-
 
 #get the threshold for setar and nlVar
 
 
-#'Extract threshold(s) coefficient
-#'
-#'Extract threshold coefficient(s)
-#'
-#'
-#'@aliases getTh
-#'@param object object of class \code{setar}, \code{summary.setar},
-#'\code{nlVar}
-#'@param \dots additional arguments to \code{getTh}
-#'@return Threshold value.
-#'@author Matthieu Stigler
-#'@keywords ts
-#'@export
-#'@examples
-#'
-#'set<-setar(lynx, m=3)
-#'getTh(set)
-#'getTh(summary(set))
-#'
-getTh<- function (object, ...)  
-  UseMethod("getTh")
-
-#' @rdname getTh
-#' @method getTh default
-#' @S3method getTh default
-getTh.default <- function(object, ...){
-  # look first just in object
-  allth<-object[grep("th",names(object))]
-  # look then in coef(object)
-  if(length(allth)==0){
-    allth<-coef(object)[grep("th",names(coef(object)))]
-  }
-  if(length(allth)==0) allth <- NULL
-  # remove thD if there
-  if(any(grepl("thD",names(allth))))
-    allth<-allth[-grep("thD",names(allth))]
-  return(allth)
-}
-
-#' @S3method getTh setar
-getTh.setar<-function(object,...){
-  object<-object$coefficients
-  getTh.default(object)
-}
-
-#' @S3method getTh lstar
-getTh.lstar<-function(object,...){
-  object<-object$coefficients
-  getTh.default(object)
-}
-
-getTh.lstar<-function(object,...){
-  object <-object$coef
-  object["th"]
-}
-
-#' @S3method getTh summary.setar
-getTh.summary.setar<-function(object,...){
-  object$th
-}
-
-#' @S3method getTh nlVar
-getTh.nlVar<-function(object,...){
-  nth <- object$model.specific$nthresh
-
-  if(nth>0){
-    th<-object$model.specific$Thresh
-    if(length(th)==1){
-      names(th)<-"th"
-    } else{
-      names(th)<-c("th1", "th2")
-    }
-  } else {
-    th <- NULL
-  }
-
-  return(th)
-}
 
 
-#' @S3method deviance nlar
+
+#'@rdname nlar-methods
+#' @export
 #Observed residuals for the fitted nlar object
 deviance.nlar<-function(object,...) crossprod(object$residuals)
 
@@ -395,16 +293,19 @@ mse <- function (object, ...)
 
 
 #' @rdname mse
-#' @method mse default
-#' @S3method mse default
+#' @export
 mse.default <- function(object, ...)
   NULL
 
-#' @S3method mse nlar
+#' @rdname nlar-methods
+#' @export
 mse.nlar <- function(object, ...)
   sum(object$residuals^2)/object$str$n.used
 
-#' @S3method AIC nlar
+#' @rdname nlar-methods
+#' @param k numeric, the penalty per parameter to be used for AIC/BIC; the default k = 2 is
+#' the classical AIC
+#' @export
 #AIC for the fitted nlar model
 AIC.nlar <- function(object,k=2, ...){
   n <- object$str$n.used
@@ -412,7 +313,8 @@ AIC.nlar <- function(object,k=2, ...){
   n * log( mse(object) ) + k * npar
 }
 
-#' @S3method BIC nlar
+#' @rdname nlar-methods
+#' @export
 #BIC for the fitted nlar model
 BIC.nlar <- function(object, ...)
 	AIC.nlar(object, k=log(getNUsed(object)))
@@ -439,18 +341,19 @@ MAPE <- function(object, ...)
   UseMethod("MAPE")
 
 #' @rdname MAPE
-#' @method MAPE default
-#' @S3method MAPE default
+#' @export
 MAPE.default <- function(object, ...)
   NULL
 
-#' @S3method MAPE nlar
+#' @rdname nlar-methods
+#' @export
 MAPE.nlar <- function(object, ...) {
   e <- abs(object$residuals/object$str$yy)
   mean( e[is.finite(e)] )
 }
 
-#' @S3method summary nlar
+#'@rdname nlar-methods
+#' @export
 #Computes summary infos for the fitted nlar model
 summary.nlar <- function(object, ...) {
   ans <- list()
@@ -463,7 +366,7 @@ summary.nlar <- function(object, ...) {
   return(extend(list(), "summary.nlar", listV=ans))
 }
 
-#' @S3method print summary.nlar
+#' @export
 #Prints summary infos for the fitted nlar model
 print.summary.nlar <- function(x, ...) {
   print(x$object)
@@ -476,7 +379,8 @@ print.summary.nlar <- function(x, ...) {
   invisible(x)
 }
 
-#' @S3method plot nlar
+#'@rdname nlar-methods
+#' @export
 plot.nlar <- function(x, ask = interactive(), ...) {
   str <- x$str
   op <- par(no.readonly=TRUE)
@@ -532,6 +436,9 @@ plot.nlar <- function(x, ask = interactive(), ...) {
 oneStep <- function(object, newdata, ...)
   UseMethod("oneStep")
 
+
+#'@rdname nlar-methods
+#'@export
 toLatex.nlar <- function(object, digits, label,...) {
   obj <- object
   str <- obj$str
@@ -549,6 +456,15 @@ toLatex.nlar <- function(object, digits, label,...) {
   res[4] <- ""
   return(structure(res, class="Latex"))
 }
+
+
+## get_include
+get_include <- function(object) UseMethod("get_include")
+get_include.linear <-  function(object) object$include
+get_include.setar <-  function(object) object$include
+get_include.lstar <-  function(object) object$model.specific$include
+get_include.aar <-  function(object) "const"
+get_include.star <-  function(object) "const"
 
 
 # LM linearity testing against 2 regime STAR

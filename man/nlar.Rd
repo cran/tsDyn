@@ -4,8 +4,16 @@
 \alias{nlar}
 \title{Non-linear time series model, base class definition}
 \usage{
-nlar(str, coefficients, fitted.values, residuals, k, model,
-  model.specific = NULL, ...)
+nlar(
+  str,
+  coefficients,
+  fitted.values,
+  residuals,
+  k,
+  model,
+  model.specific = NULL,
+  ...
+)
 }
 \arguments{
 \item{str}{a \code{nlar.struct} object, i.e. the result of a call to
@@ -21,7 +29,7 @@ An object of class \code{nlar}. \link{nlar-methods} for a list of
 available methods.
 }
 \description{
-Generic non-linear autogregressive model class constructor.
+Generic non-linear autoregressive model class constructor.
 }
 \details{
 Constructor for the generic \code{nlar} model class. On a fitted object you

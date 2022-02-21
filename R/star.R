@@ -18,6 +18,7 @@
 ## This program is a translation of Prof. Marcelo Medeiros's Matlab codes
 ##    and is indebted to him.
 
+#' @importFrom MASS ginv
 calculateLinearCoefficients <- function(A, b){
   #x <- lm.fit(x = A, y = b)$coefficients
   #x <- lm(b ~ . -1, data = data.frame(A))$coefficients  
@@ -121,12 +122,13 @@ testRegime <- function(object, ...)
 #    regime should be considered.
 #
 # object: a STAR model already built with at least 2 regimes.
-# G: the gradient matrix obtained by using computeGradient()
+# G: the gradient matrix obtained by using \code{computeGradient()}
 # rob: boolean indicating if robust tests should be used or not.
 # sig: significance level of the tests
 # 
 # returns a list containing the p-value of the F statistic and a boolean,
 #      true if there is some remaining nonlinearity and false otherwise.
+#' @importFrom Matrix norm Matrix
 testRegime.star <- function(object, G, rob=FALSE, sig=0.05, trace = TRUE, ...)
 {
 
@@ -239,7 +241,10 @@ testRegime.star <- function(object, G, rob=FALSE, sig=0.05, trace = TRUE, ...)
   }
 }
   
-
+#'@export
+coef.star <- function(object, hyperCoef=TRUE, regime = c("all", "L", "H"), ...){
+  coef.lstar(object, hyperCoef=hyperCoef, regime = regime, ...)
+}
 
 #'addRegime test
 #'
@@ -262,7 +267,7 @@ testRegime.star <- function(object, G, rob=FALSE, sig=0.05, trace = TRUE, ...)
 addRegime <- function(object, ...)
   UseMethod("addRegime")
 
-#' @S3method addRegime star
+#' @export
 addRegime.star <- function(object, ...)
 {
 
@@ -1003,7 +1008,7 @@ oneStep.star <- function(object, newdata, itime, thVar, ...)
   
 }
 
-#' @S3method print star
+#' @export
 print.star <- function(x, ...) {
   NextMethod(...)
   cat("\nMultiple regime STAR model\n\n")

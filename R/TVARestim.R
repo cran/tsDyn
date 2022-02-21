@@ -1,6 +1,7 @@
-#'Multivariate Threshold Autoregressive model
+#'Multivariate Threshold Vector Autoregressive model
 #'
-#'Estimate a multivariate Threshold VAR
+#'Estimate a multivariate Threshold VAR (TVAR), either using lags as transition variable (default),
+#'or specifying an external variable. 
 #'
 #'For fixed \code{th} and threshold variable, the model is linear, so
 #'estimation can be done directly by CLS (Conditional Least Squares). The
@@ -26,7 +27,7 @@
 #'@param model Whether the transition variable is taken in levels (TAR) or
 #'difference (MTAR)
 #'@param commonInter Whether the deterministic regressors are regime specific
-#'(commonInter=FALSE) or not.
+#'(\code{commonInter}=FALSE) or not.
 #'@param nthresh Number of thresholds
 #'@param thDelay 'time delay' for the threshold variable (as multiple of
 #'embedding time delay d) PLEASE NOTE that the notation is currently different
@@ -35,7 +36,7 @@
 #'@param mTh combination of variables with same lag order for the transition
 #'variable. Either a single value (indicating which variable to take) or a
 #'combination
-#'@param thVar external transition variable
+#'@param thVar Optional. External transition variable. 
 #'@param trim trimming parameter indicating the minimal percentage of
 #'observations in each regime
 #'@param ngrid number of elements of the grid, especially for \code{nthresh=3}
@@ -61,13 +62,23 @@
 #'@export
 #'@examples
 #'
-
+#'data(zeroyld)
+#'
+#'tv <- TVAR(zeroyld, lag=2, nthresh=2, thDelay=1, trim=0.1, mTh=1, plot=FALSE)
+#'
+#'print(tv)
+#'summary(tv)
+#'
+#'# a few useful methods:
+#'plot(tv)
+#'predict(tv)
+#'c(AIC(tv), BIC(tv), logLik(tv))
 TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model=c("TAR", "MTAR"), commonInter=FALSE, nthresh=1,thDelay=1, mTh=1,thVar, trim=0.1,ngrid, gamma=NULL,  around, plot=FALSE, dummyToBothRegimes=TRUE, trace=TRUE, trick="for", max.iter=2){
-
+  
   ## arg matching
   model<-match.arg(model)
   include<-match.arg(include)
-
+  
   y <- as.matrix(data)
   Torigin <- nrow(y) 	#Size of original sample
   T <- nrow(y) 		#Size of start sample
@@ -75,18 +86,18 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
   t <- T-p 		#Size of end sample
   k <- ncol(y) 		#Number of variables
   t<-T-p			#Size of end sample
-
-
+  
+  
   if(is.null(colnames(data)))
     colnames(data)<-paste("Var", c(1:k), sep="")
   if(max(thDelay)>p)
     stop("Max of thDelay should be smaller or equal to the number of lags")
-  if(dummyToBothRegimes==FALSE&nthresh!= 1)
+  if(dummyToBothRegimes==FALSE&nthresh!= 1) 
     warning("The 'dummyToBothRegimes' argument is only relevant for one threshold models")
-
+  
   Y <- y[(p+1):T,] #
   Z <- embed(y, p+1)[, -seq_len(k)]	#Lags matrix
-
+  
   if(include=="const")
     Z<-cbind(1, Z)
   else if(include=="trend")
@@ -94,16 +105,16 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
   else if(include=="both")
     Z<-cbind(rep(1,t),seq_len(t), Z)
   if(commonInter & include!="const")
-    stop("commonInter argument only avalaible with include = const")
+    stop("commonInter argument only available with include = const")
   npar <- ncol(Z)			#Number of parameters
-
-
+  
+  
   ########################
   ### Threshold variable
   ########################
-
+  
   ###External threshold variable
-  if (!missing(thVar)) {
+  if (!missing(thVar)) {		
     if (length(thVar) > Torigin) {
       z <- thVar[seq_len(Torigin)]
       warning("The external threshold variable is not of same length as the original variable")
@@ -121,7 +132,7 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
         stop("Unable to select the ",mTh, "variable for the threshold. Please see again mTh ")
       combin <- matrix(0,ncol=1, nrow=k)
       combin[mTh,]<-1
-    } else {
+    } else { 
       combin<-matrix(mTh,ncol=1, nrow=k)
     }
     zcombin <- y %*% combin
@@ -136,20 +147,20 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
       z <- embed(zcombin,p+1)[,seq_len(max(thDelay))+1]		#if thDelay=2, ncol(z)=2
     }
   }
-
+  
   trans<-as.matrix(z)
-
+  
   ###############################
   ###Grid for transition variable
   ###############################
-
+  
   allgammas <- sort(unique(trans[,1]))
   nga <- length(allgammas)
   ninter <- round(trim*nga)
   gammas <- allgammas[(trim*nga):((1-trim)*nga)]
-
-
-
+  
+  
+  
   if(!missing(ngrid)){
     gammas <- allgammas[seq(from=ceiling(trim*nga), to=floor((1-trim)*nga), length.out=ngrid)]
   }
@@ -157,9 +168,9 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
     gammas<-gamma
     plot<-FALSE
   }
-
+  
   Y_t<-t(Y)					#dim k x t
-
+  
   if(!missing(around)){
     if(missing(ngrid)) ngrid<-20
     if(length(around)==1)
@@ -169,11 +180,11 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
       gammas2 <- aroundGrid(around[2], allgammas,ngrid,trim, trace=trace)
     }
   }
-
+  
   ######################
-  ###One threshold functions
+  ###One threshold functions					
   ######################
-
+  
   #Model with dummy applied to only one regime
   loop1_onedummy <- function(gam1, thDelay){
     ##Threshold dummies
@@ -182,15 +193,15 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
     regimeDown<-dummyDown*Z
     ##SSR
     if(min(ndown, 1-ndown)>=trim){
-      Z1 <- cbind(regimeDown, Z)		# dim t x k(p+1)
+      Z1 <- cbind(regimeDown, Z)		# dim t x k(p+1) 
       res <- crossprod(c(lm.fit(x=Z1, y=Y)$resid))
     }	else {
       res<-NA
     }
     return(res)
   } #end of the function
-
-
+  
+  
   #Model with dummy applied to both regimes
   loop1_twodummy <- function(gam1, thDelay){
     ##Threshold dummies
@@ -205,7 +216,7 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
     }
     return(res)
   } #end of the function
-
+  
   #Model with dummy applied to both regimes and a common intercept
   loop1_twodummy_oneIntercept <- function(gam1, thDelay){
     ##Threshold dummies
@@ -213,18 +224,18 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
     ndown<-mean(d1)
     if(min(ndown, 1-ndown)>=trim){
       Z1 <- cbind(1,d1 * Z[,-1], (1-d1)*Z[,-1])		# dim k(p+1) x t
-      res <- crossprod(c(lm.fit(x=Z1, y=Y)$resid))
+      res <- crossprod(c(lm.fit(x=Z1, y=Y)$resid)) 
     } else {
       res<-NA
     }
     return(res)
   } #end of the function
-
-
+  
+  
   #######################
   ###Two thresholds functions
   #######################
-
+  
   loop2 <- function(gam1, gam2,thDelay){
     ##Threshold dummies
     dummydown <- ifelse(trans[,thDelay]<=gam1, 1, 0)
@@ -237,13 +248,13 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
     #print(c(ndown,1-nup-ndown,nup))
     if(min(nup, ndown, 1-nup-ndown)>trim){
       Z2 <- cbind(regimedown, (1-dummydown-dummyup)*Z, regimeup)		# dim k(p+1) x t
-      res <- crossprod(c(lm.fit(x=Z2, y=Y)$resid))
+      res <- crossprod(c(lm.fit(x=Z2, y=Y)$resid)) 
     }
     else
       res <- NA
     return(res)
   }
-
+  
   loop2_oneIntercept <- function(gam1, gam2,thDelay){
     ##Threshold dummies
     dummydown <- ifelse(trans[,thDelay]<=gam1, 1, 0)
@@ -255,8 +266,8 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
     ##SSR from TVAR(3)
     #print(c(ndown,1-nup-ndown,nup))
     if(min(nup, ndown, 1-nup-ndown)>trim){
-      Z2 <- cbind(1,regimedown, (1-dummydown-dummyup)*Z, regimeup)		# dim k(p+1) x t
-      res <- crossprod(c(lm.fit(x=Z2, y=Y)$resid))
+      Z2 <- cbind(1,regimedown, (1-dummydown-dummyup)*Z, regimeup)		# dim k(p+1) x t	
+      res <- crossprod(c(lm.fit(x=Z2, y=Y)$resid)) 
     }
     else
       res <- NA
@@ -272,21 +283,21 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
       func<-loop1_twodummy_oneIntercept
     else
       func <-loop1_twodummy
-  } else {
+  } else {	
     func <- loop1_onedummy
   }
-
+  
   bestone <- onesearch(thDelay,gammas, fun=func, trace=trace, gamma=gamma, plot=plot)
   bestThresh <- bestone$bestThresh
   bestDelay <- bestone$bestDelay
   allThSSR<-bestone$allres
-
-
+  
+  
   ############################
   ###Search for two threshold
   ############################
-
-
+  
+  
   if(nthresh==2){
     ###Conditionnal step
     if(commonInter)
@@ -295,7 +306,7 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
       func2<-loop2
     # secondBestThresh<-condiStep(allgammas, threshRef=bestThresh, delayRef=bestDelay,ninter=ninter, fun=func2)$newThresh
     # step2FirstBest<-condiStep(allgammas, threshRef=secondBestThresh, delayRef=bestDelay,ninter=ninter, fun=func2)
-
+    
     last<-condiStep(allgammas, threshRef=bestThresh, delayRef=bestDelay, fun=func2, trim=trim, trace=trace)
     i<-1
     while(i<max.iter){
@@ -307,22 +318,22 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
         i<-max.iter
         last<-b}
     }
-
+    
     bests<-c(last$threshRef, last$newThresh)
-
+    
     ###Alternative step: grid around the points from first step
     smallThresh <- min(bests)		#bestThresh,secondBestThresh)
     gammasDown <- aroundGrid(around=smallThresh,allgammas,ngrid=30, trim=trim, trace=trace)
-
+    
     bigThresh <- max(bests)			#bestThresh,secondBestThresh)
     gammasUp <- aroundGrid(around=bigThresh,allgammas,ngrid=30, trim=trim, trace=trace)
-
+    
     bestThresh<-grid(gammasUp, gammasDown, fun=func2, method=trick, thDelay=bestDelay, trace=trace)
-
+    
   }#end if nthresh=2
-
+  
   ###Search both thresholds with d given
-
+  
   if(nthresh==3){
     bestDelay <- thDelay
     if(missing(gamma)==FALSE){
@@ -343,9 +354,9 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
         cat("The function will compute about", length(gammas)*length(gammas2)/2, "operations. Take a coffee and come back\n")
     }
     if(length(thDelay)>1) stop("length of thDelay should not be bigger than 1. The whole search is made only upon the thresholds with given delay")
-
+    
     store3 <- matrix(NA,ncol=length(gammas2), nrow=length(gammas))
-
+    
     ###Loop
     for(i in seq_len(length(gammas))){
       gam1 <- gammas[i]
@@ -354,28 +365,28 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
         store3[i,j] <- loop2(gam1, gam2, thDelay=bestDelay)
       }
     }
-
+    
     position <- which(store3==min(store3, na.rm=TRUE), arr.ind=TRUE)
     r <- position[1]
     c <- position[2]
-
+    
     gamma1 <- gammas[r]
     gamma2 <- gammas2[c]
     bestThresh <- c(gamma1, gamma2)
-
+    
   }#end n
-
+  
   ##################################
   ###Best Model: set variables
   ##################################
   val <- if(commonInter) 1 else -(seq_len(ncol(Z)))
-
+  
   if(nthresh==1){
     dummydown <- ifelse(trans[,bestDelay]<=bestThresh, 1, 0)
     ndown <- mean(dummydown)
     regimeDown <- dummydown*Z[,-val]
     dummyup<-1-dummydown
-    if(dummyToBothRegimes)
+    if(dummyToBothRegimes) 
       regimeUp<-dummyup*Z[,-val]
     else regimeUp<-Z
     if(commonInter)
@@ -383,7 +394,7 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
     else
       Zbest <- cbind(regimeDown,regimeUp)		# dim k(p+1) x t
   }
-
+  
   if(nthresh==2|nthresh==3){
     dummydown <- ifelse(trans[,bestDelay]<=bestThresh[1], 1,0)
     ndown <- mean(dummydown)
@@ -397,52 +408,52 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
     else
       Zbest <- cbind(regimedown,dummymid*Z, regimeup)	# dim k(p+1) x t
   }
-
+  
   Zbest_t <- t(Zbest)
   reg<-if(nthresh==1) dummydown+2*dummyup else dummydown+2*dummymid+3*dummyup
   regime <- c(rep(NA, T-t), reg)
-
+  
   ##################################
   ### Best Model: estimate
   ##################################
-
+  
   final <- lm.fit(x=Zbest, y=Y)
-
+  
   Bbest <- t(final$coef)
   fitted <- final$fitted
   resbest <- final$residuals
-
+  
   SSRbest <- as.numeric(crossprod(c(resbest)))
   nparbest<-nrow(Bbest)*ncol(Bbest)
-
+  
   Sigmabest <- matrix(1/t*crossprod(resbest), ncol=k, dimnames=list(colnames(data), colnames(data)))
   SigmabestOls <- Sigmabest * (t/(t-ncol(Bbest)))
-
+  
   ### naming and splitting B
   rownames(Bbest) <- paste("Equation", colnames(data))
   LagNames <- c(paste(rep(colnames(data), p), -rep(seq_len(p), each=k)))
-
+  
   Bnames  <- c(switch(include, const="Intercept", trend="Trend", both=c("Intercept","Trend"), none=NULL), LagNames)
   Blist <- nameB(mat=Bbest, commonInter=commonInter, Bnames=Bnames, nthresh=nthresh, npar=npar)
-
+  
   ## name the coefMat:
-  BnamesVec <- if(class(Blist)=="list") c(sapply(Blist, colnames)) else colnames(Blist)
+  BnamesVec <- if(inherits(Blist, "list")) c(sapply(Blist, colnames)) else colnames(Blist)
   colnames(Bbest) <- BnamesVec
-
+  
   ##number of obs in each regime
   if(nthresh==1)
     nobs <- c(ndown=ndown, nup=1-ndown)
   else if (nthresh==2)
     nobs <- c(ndown=ndown, nmiddle=1-nup-ndown,nup=nup)
-
+  
   ###Y and regressors matrix
   tZbest <- Zbest
   naX <- rbind(matrix(NA, ncol=ncol(tZbest), nrow=p), tZbest)
   YnaX <- cbind(data, naX)
   BlistMod <- nameB(mat=Bbest, commonInter=commonInter, Bnames=Bnames, nthresh=nthresh, npar=npar,sameName=FALSE )
-  BnamesVecMod <- if(class(BlistMod)=="list") c(sapply(BlistMod, colnames)) else colnames(BlistMod)
+  BnamesVecMod <- if(inherits(BlistMod, "list")) c(sapply(BlistMod, colnames)) else colnames(BlistMod)
   colnames(YnaX) <- c(colnames(data),BnamesVecMod)
-
+  
   ###elements to return
   specific <- list()
   specific$allgammas <- allgammas
@@ -460,17 +471,27 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
   specific$allThSSR <- allThSSR#SSR values for all the th computed
   specific$Bnames <- Bnames
   specific$timeAttributes <- attributes(data[,1])
-
-  z<-list(coefficients=Blist, coeffmat=Bbest, residuals=resbest, model=YnaX,
+  
+  ## input arguments to return
+  inputArgs <-  list()
+  inputArgs$model <-  model
+  inputArgs$commonInter <-  commonInter
+  inputArgs$trim <- trim
+  inputArgs$mTh <- mTh
+  inputArgs$dummyToBothRegimes <- dummyToBothRegimes
+  inputArgs$call <- match.call()
+  
+  
+  z<-list(coefficients=Blist, coeffmat=Bbest, residuals=resbest, model=YnaX, 
           nobs_regimes=nobs, k=k, t=t, T=T,nparB=nparbest, df.residual=t-ncol(Bbest),
-          fitted.values=fitted, lag=lag, include=include,model.specific=specific,
-          usedThVar=trans[,bestDelay], trim=trim,
-          qr = final$qr)
+          fitted.values=fitted, lag=lag, include=include,model.specific=specific, 
+          usedThVar=trans[,bestDelay], trim=trim, 
+          qr = final$qr, inputArgs = inputArgs)
   class(z) <- c("TVAR","nlVar")
   attr(z, "levelTransVar") <- model
   attr(z, "transVar") <- if(!missing(thVar)) "external" else "internal"
   attr(z, "varsLevel") <- "level"
-
+  
   if(plot){
     layout(matrix(1:ifelse(z$model.specific$threshEstim,3,2), ncol=1))
     plot1(bestThresh, nthresh,usedThVar=z$usedThVar)
@@ -482,7 +503,7 @@ TVAR <- function(data, lag, include = c( "const", "trend","none", "both"), model
 }	#end of the whole function
 
 
-#' @S3method print TVAR
+#' @export
 print.TVAR<-function(x,...){
 # 	NextMethod(...)
 	cat("Model TVAR with ", x$model.specific$nthresh, " thresholds\n\n")
@@ -491,7 +512,7 @@ print.TVAR<-function(x,...){
 	print(paste(x$model.specific$Thresh, collapse=" "))
 }
 
-#' @S3method summary TVAR
+#' @export
 summary.TVAR<-function(object,...){
 	x<-object
 	xspe<-x$model.specific
@@ -499,7 +520,7 @@ summary.TVAR<-function(object,...){
 	t<-x$t
 	p<-x$lag
 	Z<-t(as.matrix(tail.matrix(x$model[,-c(1:k)],t)))
-
+	
 	###Stdev, VarCov
 	SigmabestOls <- matrix(1/x$df.residual*crossprod(x$residuals),ncol=k)
 	VarCovB <- SigmabestOls %x% solve(tcrossprod(Z))
@@ -535,25 +556,25 @@ summary.TVAR<-function(object,...){
 	return(x)
 }
 
-#' @S3method print summary.TVAR
+#' @export
 print.summary.TVAR<-function(x,digits = max(3, getOption("digits") - 3), signif.stars = getOption("show.signif.stars"),...){
 	coeftoprint<-list()
 	for(i in 1:length(x$bigcoefficients)){
 		a<-myformat(x$coefficients[[i]], digits)
 		b<-myformat(x$StDev[[i]], digits)
 		if(getOption("show.signif.stars"))
-			stars<-x$stars[[i]]
+			stars<-x$stars[[i]]	
 		else
 			stars<-NULL
 		coeftoprint[[i]]<-matrix(paste(a,"(", b,")",stars, sep=""), nrow=nrow(x$StDev[[1]]))
 		dimnames(coeftoprint[[i]])<-dimnames(x$coefficients[[1]])
 	}
 	cat("Model TVAR with ", x$model.specific$nthresh, " thresholds\n")
-	cat("\nFull sample size:",x$T, "\tEnd sample size:", x$t)
+	cat("\nFull sample size:",x$T, "\tEnd sample size:", x$t) 
 	cat("\nNumber of variables:", x$k,"\tNumber of estimated parameters:", x$npar,"+",x$model.specific$nthresh)
 	cat("\nAIC",x$aic , "\tBIC", x$bic, "\t SSR", x$SSR,"\n\n")
 	print(noquote(coeftoprint))
-	if (signif.stars)
+	if (signif.stars) 
 	        cat("---\nSignif. codes: ", attr(x$starslegend, "legend"), "\n")
 	cat("\nThreshold value:",x$model.specific$Thresh)
 	if(!x$model.specific$threshEstim)
@@ -592,23 +613,24 @@ nga <- length(usedThVar)
 }
 
 #Plot for the grid search
-plot3<-function(th,nthresh, allTh){
+plot3 <- function(th,nthresh, allTh, type = "p"){
     allDelay<-unique(allTh[,1])
     col <- rep(allDelay,length.out=nrow(allTh))+1
-    if(nthresh==1)
+    if(nthresh==1) {
       posBestTh<-which(allTh[,2]==th)
-    else{
-      posBestTh1<-which(allTh[,2]==th[1])
-      posBestTh2<-which(allTh[,2]==th[2])
-      posBestTh<-c(posBestTh1,posBestTh2)}
-    plot(allTh[,2], allTh[,3], col=col,xlab="Threshold Value",ylab="SSR")
+    } else {
+      posBestTh1 <- which(allTh[, 2] == th[1])
+      posBestTh2 <- which(allTh[, 2] == th[2])
+      posBestTh <- c(posBestTh1, posBestTh2)
+    }
+    plot(allTh[,2], allTh[,3], col=col,xlab="Threshold Value",ylab="SSR", type = type)
     title("Results of the grid search")
     points(th,allTh[posBestTh,3], col=c(2:(nthresh+1)), cex=2)
     leg<-c(paste("Threshold Delay", allDelay),(paste("th", 1:nthresh)))
     legend("topleft", pch=1, legend=leg, col=c(allDelay+1,c(2:(nthresh+1))), bg="white")
 }
 
-#' @S3method plot TVAR
+#' @export
 plot.TVAR<-function(x,ask=interactive(), ...){
   th<-x$model.specific$Thresh
   nthresh<-x$model.specific$nthresh
@@ -623,7 +645,7 @@ plot.TVAR<-function(x,ask=interactive(), ...){
 }
 
 
-#' @S3method toLatex TVAR
+#' @export
 toLatex.TVAR<-function(object,..., digits=4, parenthese=c("StDev","Pvalue")){
 	x<-object
 	parenthese<-match.arg(parenthese)
@@ -715,7 +737,7 @@ nameB <- function(mat, commonInter, Bnames, nthresh, npar, model=c("TVAR","TVECM
       Blist <- list(Bdown=Bdown, Bup=Bup)
     }
 ##2 thresholds
-  } else {
+  } else { 
     if(commonInter){
       if(model=="TVAR")
         colnames(mat) <- c("Intercept", paste(rep(addRegLetter, each=length(sBnames)), rep(sBnames,3),sep=""))
@@ -726,7 +748,7 @@ nameB <- function(mat, commonInter, Bnames, nthresh, npar, model=c("TVAR","TVECM
       colnames(mat) <- paste(rep(addRegLetter, each=length(Bnames)), rep(Bnames,3), sep="")
       Bdown <- mat[,c(1:npar)]
       Bmiddle <- mat[,c(1:npar)+npar]
-      Bup <- mat[,c(1:npar)+2*npar]
+      Bup <- mat[,c(1:npar)+2*npar]		
       colnames(Bmiddle) <- Bnames
       Blist <- list(Bdown=Bdown, Bmiddle=Bmiddle,Bup=Bup)}
   }
@@ -737,7 +759,7 @@ onesearch <- function(thDelay,gammas, fun, trace, gamma, plot){
   grid1 <- expand.grid(thDelay,gammas)				#grid with delay and gammas
   store <- mapply(fun,thDelay=grid1[,1],gam1=grid1[,2])
   posBestThresh <- which(store==min(store, na.rm=TRUE), arr.ind=TRUE)[1]
-
+  
   if(trace)
     cat("Best unique threshold", grid1[posBestThresh,2],"\n")
   if(length(thDelay)>1&trace)
@@ -750,7 +772,7 @@ condiStep <- function(allTh, threshRef, delayRef, fun, trim, trace=TRUE, More=NU
   allThUniq <- unique(allTh)
   ng <- length(allTh)
   down <- ceiling(trim*ng)
-
+  
    #correction for case with few unique values
   if(allTh[down]==allTh[down+1]){
     sames <- which(allTh==allTh[down])
@@ -766,7 +788,7 @@ condiStep <- function(allTh, threshRef, delayRef, fun, trim, trace=TRUE, More=NU
 
   possibleThresh <- abs(allTh-threshRef)
   wh.thresh <- max(which(possibleThresh==min(possibleThresh)))
-
+  
 #search for a second threshold smaller than the first one
   if(wh.thresh>down+nMin){
     upInter <- wh.thresh-nMin
@@ -784,14 +806,14 @@ condiStep <- function(allTh, threshRef, delayRef, fun, trim, trace=TRUE, More=NU
   }
   else
     storeMinus <- NA
-
+  
 	#search for a second threshold higher than the first
   if(wh.thresh<up-nMin){
     downInter <- wh.thresh+nMin
     if(FALSE){#allTh[downInter]==allTh[wh.thresh]){
       samesTh <-which(allTh==allTh[downInter])
       downInter <-samesTh[length(samesTh)]+nMin
-    }
+    }    
     if(allTh[downInter]==allTh[downInter+1]){
       samesInter <-which(allTh==allTh[downInter])
       downInter <-samesInter[length(samesInter)]+1
@@ -812,11 +834,13 @@ condiStep <- function(allTh, threshRef, delayRef, fun, trim, trace=TRUE, More=NU
 	#results
   store2 <- c(storeMinus, storePlus)
   positionSecond <- which(store2==min(store2, na.rm=TRUE), arr.ind=TRUE)
-  if(positionSecond<=length(storeMinus))
-    newThresh<-gammaMinus[positionSecond]
-  else
-    newThresh<-gammaPlus[positionSecond-length(storeMinus)]
-  SSR<-min(store2, na.rm=TRUE)
+  positionSecond <-  positionSecond[1] ## arbitrary, in case multiple values
+  if(positionSecond<=length(storeMinus)) {
+    newThresh <- gammaMinus[positionSecond]
+  } else {
+    newThresh <- gammaPlus[positionSecond - length(storeMinus)]
+  }
+  SSR <- min(store2, na.rm = TRUE)
   if(trace)
     cat("Second best: ",newThresh, " (conditionnal on th= ",threshRef, " and Delay= ", delayRef," ) \t SSR/AIC: ", SSR, "\n", sep="")
   list(threshRef=threshRef, newThresh=newThresh, SSR=SSR)
@@ -841,7 +865,7 @@ grid<-function(gammasUp, gammasDown, fun, trace=TRUE, method=c("for", "apply", "
 		positionIter <- which(store==min(store, na.rm=TRUE), arr.ind=TRUE)
 		rIter <- positionIter[1]
 		cIter <- positionIter[2]
-
+	
 		gamma1Iter <- gammasDown[rIter]
 		gamma2Iter <- gammasUp[cIter]
 
@@ -854,18 +878,18 @@ grid<-function(gammasUp, gammasDown, fun, trace=TRUE, method=c("for", "apply", "
 		store<-apply(grid,1,temp)
 		bests<-which(store==min(store, na.rm=TRUE))
 		if(length(bests)>1) {
-			warning("There were ",length(bests), " thresholds values which minimize the SSR in the first search, the first one was taken")
+			warning("There were ",length(bests), " thresholds values which minimize the SSR in the first search, the first one was taken") 	
 			bests<-bests[1]}
 # 		beta_grid<-grid[bests,1]
 # 		bestGamma1<-grid[bests,2]
 		bestThresh <- c(grid[bests,1], grid[bests,2])
 	}
 	else if(method=="mapply"){
-		grid<-expand.grid(gammasDown,gammasUp)
+		grid<-expand.grid(gammasDown,gammasUp)	
 		store<-mapply(fun, gam1=grid[,1],gam2=grid[,2], MoreArgs=list(...))
 		bests<-which(store==min(store, na.rm=TRUE))
 		if(length(bests)>1) {
-			warning("There were ",length(bests), " thresholds values which minimize the SSR in the first search, the first one was taken")
+			warning("There were ",length(bests), " thresholds values which minimize the SSR in the first search, the first one was taken") 	
 			bests<-bests[1]}
 # 		beta_grid<-grid[bests,1]
 # 		bestGamma1<-grid[bests,2]
@@ -903,9 +927,9 @@ AIC(VAR)
 BIC(VAR)
 coef(VAR)
 deviance(VAR)
-#summary(VAR)
-#toLatex(VAR)
-#toLatex(summary(VAR))
+summary(VAR)
+toLatex(VAR)
+toLatex(summary(VAR))
 VAR[["model.specific"]][["oneMatrix"]]
 ###TODO
 #pre specified gamma: not working!

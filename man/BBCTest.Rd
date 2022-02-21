@@ -4,8 +4,14 @@
 \alias{BBCTest}
 \title{Test of unit root against SETAR alternative}
 \usage{
-BBCTest(x, m, series, testStat = c("LR", "Wald", "LM"), trim = 0.1,
-  grid = c("minPerc", "minObs"))
+BBCTest(
+  x,
+  m,
+  series,
+  testStat = c("LR", "Wald", "LM"),
+  trim = 0.1,
+  grid = c("minPerc", "minObs")
+)
 }
 \arguments{
 \item{x}{time series}
@@ -39,6 +45,9 @@ TODO
 
 BBCTest(lynx, m=3, test="Wald", grid="minPerc")
 
+}
+\references{
+Bec, Ben Salem and Carrasco (2004) Tests for Unit-Root versus Threshold Specification With an Application to the Purchasing Power Parity Relationship, Journal of Business and Economic Statistics; 22:4
 }
 \seealso{
 \code{\link{setarTest}} for a test with stationarity as a null.

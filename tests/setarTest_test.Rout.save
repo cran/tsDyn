@@ -1,0 +1,87 @@
+
+R version 3.6.1 (2019-07-05) -- "Action of the Toes"
+Copyright (C) 2019 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(tsDyn)
+> suppressMessages(library(tidyverse))
+> suppressWarnings(RNGversion("3.5.3"))
+> 
+> data(IIPUs)
+> 
+> ### grid ###
+> grid <-  crossing(include = c( "const", "trend","none", "both"),
++                   lag = 1:2L, 
++                   thDelay = 0:1L, 
++                   test = c("1vs", "2vs3")) %>% 
++   filter(thDelay<lag)
+> 
+> 
+> ### run ###
+> res <- grid %>% 
++   mutate(dat = pmap(list(include, lag, thDelay, test),
++                     ~setarTest(IIPUs, 
++                                include= ..1,
++                                m = ..2,
++                                thDelay = ..3,
++                                test = ..4,
++                                nboot = 2)))
+> 
+> 
+> ### show F tests ###
+> res %>% 
++   mutate(Ftests = map(dat, ~enframe(.$Ftests))) %>% 
++   select(-dat) %>% 
++   unnest(Ftests)%>% 
++   as.data.frame() %>% 
++   head(10) %>% 
++   print(digits=3) 
+   include lag thDelay test name value
+1     both   1       0  1vs 1vs2  5.16
+2     both   1       0  1vs 1vs3 10.22
+3     both   1       0  1vs 2vs3  5.01
+4     both   1       0 2vs3 1vs2  5.16
+5     both   1       0 2vs3 1vs3 10.22
+6     both   1       0 2vs3 2vs3  5.01
+7     both   2       0  1vs 1vs2 14.99
+8     both   2       0  1vs 1vs3 28.83
+9     both   2       0  1vs 2vs3 13.40
+10    both   2       0 2vs3 1vs2 14.99
+> 
+> res %>% 
++   mutate(Ftests = map(dat, ~enframe(.$SSRs))) %>% 
++   select(-dat) %>% 
++   unnest(Ftests)%>% 
++   as.data.frame() %>% 
++   head(10) %>% 
++   print(digits=3) 
+   include lag thDelay test name value
+1     both   1       0  1vs    1   606
+2     both   1       0  1vs    2   599
+3     both   1       0  1vs    3   593
+4     both   1       0 2vs3    1   606
+5     both   1       0 2vs3    2   599
+6     both   1       0 2vs3    3   593
+7     both   2       0  1vs    1   533
+8     both   2       0  1vs    2   516
+9     both   2       0  1vs    3   501
+10    both   2       0 2vs3    1   533
+> 
+> 
+> proc.time()
+   user  system elapsed 
+ 30.625   0.220  31.026 

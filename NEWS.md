@@ -1,3 +1,12 @@
+## tsDyn 11-0.4
+ * By  Matthieu Stigler (2023-01-26).
+ * Fixing test output as numerical differences on exotic platforms implied 11-0.3 didn't pass. 
+ * Fix doi formatting
+
+## tsDyn 11-0.3 (not submitted to CRAN)
+ * By  Matthieu Stigler (2023-01-21).
+ * Minor fix, integrate pull request  #47 "Replace rgl.* functions with *3d" by @dmurdoch
+
 ## tsDyn 11-0.2
  * By  Matthieu Stigler (2022-03-09).
  * Add argument `seed` in `setarTest`

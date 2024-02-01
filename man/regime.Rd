@@ -23,7 +23,7 @@ Default to TRUE.}
 
 \item{\dots}{additional arguments to \code{regime}}
 
-\item{discretize}{logical (default TRUE) whether the series are discretized to {1,2}, 
+\item{discretize}{logical (default TRUE) whether the series are discretized to \{1,2\}, 
 or whether regime probabilities are returned.}
 }
 \value{

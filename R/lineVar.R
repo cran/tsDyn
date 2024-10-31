@@ -29,8 +29,8 @@
 #'case.
 #'@param beta for VECM only: user-specified cointegrating value. 
 #'If NULL, will be estimated using the estimator specified in \code{estim}
-#'@param LRinclude Possibility to include in the long-run relationship and the
-#'ECT a trend, a, constant, etc. Can also be a matrix with exogeneous regressors
+#'@param LRinclude For VECM: type of deterministic regressor(s) to include in the long-term
+#'relationship. Can also be a matrix with exogeneous regressors (2OLS only). 
 #'@param estim Type of estimator for the VECM: '2OLS' for the two-step approach
 #'or 'ML' for Johansen MLE
 #'@param exogen Inclusion of exogenous variables (first row being first=oldest
@@ -116,8 +116,8 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 	  colnames(data)<-paste("Var", c(1:k), sep="")
 
 ###Check args
-  include<-match.arg(include)
-  LRinclude<-match.arg(LRinclude)
+  include <- match.arg(include)
+  LRinclude <- match.arg(LRinclude)
   if(lag==0) {
     warning("Lag=0 not fully implemented, methods not expected to work: fevd, predict, irf,...")
   }
@@ -196,15 +196,12 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
     if(is.null(beta) ){
 
     ## build LRplus: deterministic/exogeneous regressor in coint
-      if(is.character(LRinclude)){
-        LRplus <-switch(LRinclude, "none"=NULL,"const"=rep(1,T),"trend"=seq_len(T),"both"=cbind(rep(1,T),seq_len(T)))
-        LRinc_name <- switch(LRinclude, "const"="const", "trend"="trend", "both"=c("const", "trend"), "none"=NULL)
-        LRinc_dim <- switch(LRinclude, "const"=1, "trend"=1, "both"=2, "none"=0)
-      } else if(inherits(LRinclude, c("matrix", "numeric"))) {
-        LRplus <- LRinclude
-      } else{
-        stop("Argument LRinclude not correctly indicated")
-      }
+      LRplus <-switch(LRinclude, "none"=NULL,"const"=rep(1,T),
+                      "trend"=seq_len(T),"both"=cbind(rep(1,T),seq_len(T)))
+      LRinc_name <- switch(LRinclude, "const"="const", "trend"="trend", 
+                           "both"=c("const", "trend"), "none"=NULL)
+      LRinc_dim <- switch(LRinclude, "const"=1, "trend"=1, "both"=2, "none"=0)
+      
     ## run coint regression
       if(LRinclude=="none"){
         cointLM<-lm(y[,1] ~  y[,-1]-1)
@@ -334,6 +331,12 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
   }
   Bnames<-c(ECT,BnamesInter,Xminus1Names, LagNames, exo_names)
   colnames(B)<-Bnames
+  
+  coef_names_vec <- paste(rep(rownames(B), each= ncol(B)),
+                          rep(colnames(B), times= nrow(B)), 
+                          sep=":")
+  coef_names_vec <- gsub(" ", "", coef_names_vec)
+  coef_names_vec <- gsub("Equation", "", coef_names_vec)
 
 ###Y and regressors matrix to be returned
   naX<-rbind(matrix(NA, ncol=ncol(Z), nrow=T-t), Z)
@@ -368,6 +371,7 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 
   z<-list(residuals=res,  
           coefficients=B,  k=k, t=t,T=T, npar=npar, nparB=ncol(B), type="linear", 
+          coef_names_vec = coef_names_vec,
           fitted.values=fitted, 
           model.x=Z, 
           include=include,
@@ -444,7 +448,7 @@ lineVar<-function(data, lag, r=1,include = c( "const", "trend","none", "both"), 
 #'@param beta for VECM only: user-specified cointegrating values, the cointegrating vector will be
 #' taken as: (1, -\code{beta})
 #'If NULL, will be estimated using the estimator specified in \code{estim}
-#'@param LRinclude Type of deterministic regressors to include in the long-term
+#'@param LRinclude Type of deterministic regressor(s) to include in the long-term
 #'relationship. Can also be a matrix with exogeneous regressors (2OLS only).
 #'@param estim Type of estimator: \code{2OLS} for the two-step approach or
 #'\code{ML} for Johansen MLE
@@ -617,11 +621,36 @@ print.summary.VAR<-function(x,...){
 vcov.VAR<-function(object, ...){
   sum<-summary.VAR(object)
   so<-sum$sigma %x% sum$cov.unscaled
-  co.names<-gsub(" ", "", colnames(coef(object)))
-  eq.names <- eqNames(object)
-  together.names<-paste(rep(eq.names,each= length(co.names)), co.names, sep=":")
-  dimnames(so)<-list(together.names, together.names)
+  dimnames(so)<-list(object$coef_names_vec, object$coef_names_vec)
   so
+}
+
+
+#' @export
+# code copied from confint.default, problem is that it expects 
+# a vector coef, which cannot be changed 
+# (local temporary change of coef.VAR created errors elsewhere)
+confint.VAR <- function (object, parm, level = 0.95, ...) {
+  ## get coefs
+  cf <- coef(object)
+  cf <- c(matrix(cf, nrow=1, byrow = TRUE))
+  names(cf) <- object$coef_names_vec
+  pnames <- names(cf)
+  if (missing(parm)) {
+    parm <- pnames
+  } else if (is.numeric(parm))  {
+    parm <- pnames[parm]
+  }
+  a <- (1 - level)/2
+  a <- c(a, 1 - a)
+  pct <- paste(format(100 * a, trim = TRUE, scientific = FALSE, digits = 3), 
+               "%")
+  fac <- stats::qt(a, object$df.residual)
+  ci <- array(NA, dim = c(length(parm), 2L), dimnames = list(parm, 
+                                                             pct))
+  ses <- sqrt(diag(vcov(object)))[parm]
+  ci[] <- cf[parm] + ses %o% fac
+  ci
 }
 
 #' @export

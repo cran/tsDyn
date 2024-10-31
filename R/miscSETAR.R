@@ -156,9 +156,10 @@ SSR_1thresh<- function(gam1,thDelay, yy=yy,xx=xx,trans=trans, ML=ML, MH=MH,const
 	return(res)
 }
 
-AIC.matrices<-function(X,y, T, k=2){
-	SSR <- getSSR(X,y)
-	res<-T*log(SSR/T)+k*(ncol(X)+2)
+#'@export
+AIC.matrices<-function(object,y, T, k=2, ...){
+	SSR <- getSSR(X=object,y)
+	res<-T*log(SSR/T)+k*(ncol(object)+2)
 	return(res)
 }
 

@@ -1,3 +1,25 @@
+## tsDyn 11.0.5.2
+ * By  Matthieu Stigler (2024-10-29)
+ * Fix CRAN issues: disable over-sensitive tests
+
+## tsDyn 11.0.5.1
+ * By  Matthieu Stigler (2024-10-28)
+ * Fix CRAN issues: use now teststhat for one file
+
+
+## tsDyn 11.0.5
+ * By  Matthieu Stigler (2024-10-27)
+ 
+ * Fix small issues in tests
+ * Fix bug in selectLSTAR, cf. https://github.com/MatthieuStigler/tsDyn/issues/55
+ * Internal: git move all one level up
+ * Internal: use rhub2
+
+
+## tsDyn 11-0.4.1
+ * By  CRAN maintainers (2024-02-01).
+
+
 ## tsDyn 11-0.4
  * By  Matthieu Stigler (2023-01-26).
  * Fixing test output as numerical differences on exotic platforms implied 11-0.3 didn't pass. 

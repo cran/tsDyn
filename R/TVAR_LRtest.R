@@ -68,7 +68,7 @@
 #'\code{\link{OlsTVAR}} for estimation of the model.
 #'@references Hansen (1999) Testing for linearity, Journal of Economic Surveys,
 #'Volume 13, Number 5, December 1999 , pp. 551-576(26) available at:
-#'\url{http://www.ssc.wisc.edu/~bhansen/papers/cv.htm}
+#'\url{https://www.ssc.wisc.edu/~bhansen/papers/cv.htm}
 #'
 #'Lo and Zivot (2001) "Threshold Cointegration and Nonlinear Adjustment to the
 #'Law of One Price," Macroeconomic Dynamics, Cambridge University Press, vol.
@@ -550,6 +550,7 @@ TVAR.LRtest <- function (data, lag=1, trend=TRUE, series, thDelay = 1:m, mTh=1, 
   return(res)
 }#End of thw whole function
 
+#'@export
 print.TVARtest<-function(x,...){
   cat("Test of linear VAR against TVAR(1) and TVAR(2)\n\nLR test:\n")
   LR<-rbind(x$LRtest.val,x$Pvalueboot)
@@ -557,6 +558,7 @@ print.TVARtest<-function(x,...){
   print(LR)
 }
 
+#'@export
 summary.TVARtest<-function(object,...){
   cat("Test of linear VAR against TVAR(1) and TVAR(2)\n\nLR test:\n")
   LR<-rbind(object$LRtest.val,object$Pvalueboot)

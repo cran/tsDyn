@@ -87,12 +87,10 @@ matrix(c(AIC(lin),AIC(set1),AIC(set2),BIC(lin),BIC(set1),BIC(set2)),ncol=2,dimna
 
 
 ###################################################
-### code chunk number 13: ThCointOverview.Rnw:1458-1463 (eval = FALSE)
+### code chunk number 13: ThCointOverview.Rnw:1450-1455 (eval = FALSE)
 ###################################################
 ## system.time(test1<-TVECM.HStest(dat, lag=1, nboot=200))
 ## 
 ## library(doMC)
 ## registerDoMC(2) #Number of cores
 ## system.time(test1<-TVECM.HStest(dat, lag=1, nboot=200, hpc="foreach"))
-
-

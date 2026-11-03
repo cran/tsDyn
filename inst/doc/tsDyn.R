@@ -365,5 +365,3 @@ lyap(ly,start=6,end=70)
 ## plot(setar(lynx, m=1, model="MTAR"))
 ## plot(setar(lynx, m=3, type="ADF"))
 ##  #both won't work
-
-

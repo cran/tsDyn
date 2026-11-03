@@ -29,6 +29,8 @@ devtools::check_win_devel()
 devtools::check_win_release()
 devtools::check_win_oldrelease()
 
+devtools::check_mac_release()
+
 ## Rhb  v2
 # git remote set-url origin https://github.com/MatthieuStigler/tsDyn.git
 rhub::rhub_setup()
@@ -72,5 +74,6 @@ cat(devtools::spell_check(use_wordlist = TRUE)$word, sep = "\n")
 
 ## Release
 devtools::release_checks()
-devtools::release()
+
+usethis::use_release_issue() ## newer for # devtools::release()
 # direct: devtools::submit_cran()
